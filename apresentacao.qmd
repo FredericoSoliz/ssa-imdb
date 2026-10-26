@@ -193,38 +193,50 @@ m5 |> transmute(Modelo = modelo, AUC = num(auc, 3), Accuracy = num(accuracy, 3),
 canone_20 <- res$p2$estimate[startsWith(res$p2$modelo, "3.") & res$p2$decada == 1920]
 bruto_20  <- res$p2$estimate[startsWith(res$p2$modelo, "1.") & res$p2$decada == 1920]
 razao_declives <- max(res$p3_declives$estimate) / min(res$p3_declives$estimate)
+sinal <- function(x) sub("-", "−", sub(".", ",", sprintf("%+.1f", x), fixed = TRUE))
 ```
 
-::: {.cartoes}
-::: {.cartao}
-[P1 · Fatores]{.etiqueta}
-[`r num(100 * res$p1_importancia$delta_r2[1], 0)` p.p.]{.valor}
-dos `r num(100 * res$p1_r2, 0)` % de R² vêm do **género**. Documentary +1,5 e Horror −0,9 pontos. **`r num(100 * (1 - res$p1_r2), 0)` % fica por explicar.**
+::: {.conclusoes}
+
+::: {.pergunta}
+[P1]{.tag} O que explica a nota de um filme?
 :::
-::: {.cartao}
-[P2 · Época]{.etiqueta}
-[`r sub(".", ",", sprintf("%+.1f", bruto_20), fixed = TRUE)` → `r sub("-", "−", sub(".", ",", sprintf("%+.1f", canone_20), fixed = TRUE))`]{.valor}
-anos 20 vs. 2010: em bruto vs. no **cânone**. A vantagem dos clássicos é **viés de sobrevivência**.
-:::
-::: {.cartao}
-[P3 · Votos × género]{.etiqueta}
-[`r round(razao_declives)`×]{.valor}
-diferença no "valor" da popularidade entre géneros. Pesa mais em **western e terror**, menos em **documentário e música**.
-:::
-::: {.cartao}
-[P4 · Realizador]{.etiqueta}
-[`r num(100 * res$p4$icc_controlado, 0)` %]{.valor}
-da variância está **entre realizadores**, mesmo depois de controlar género, duração, década e votos.
-:::
-::: {.cartao}
-[P5 · Previsão]{.etiqueta}
-[AUC `r num(m5$auc[3], 2)`]{.valor}
-o *random forest* discrimina bem, mas com limiar 0,5 deteta só `r num(100 * m5$sensibilidade[3], 0)` % dos filmes ≥ 7.
-:::
+::: {.resposta}
+[Sobretudo o género.]{.titulo} O modelo explica `r num(100 * res$p1_r2, 0)` % das diferenças de nota, e cerca de dois terços disso vêm do género. Com tudo o resto igual, um documentário tem +1,5 pontos e um filme de terror −0,9. Duração, época e popularidade pesam pouco. Os outros `r num(100 * (1 - res$p1_r2), 0)` % ficam por explicar: é aí que entra a qualidade do argumento, da realização e dos atores, que estes dados não medem.
 :::
 
-::: {.destaque}
-A nota do IMDb é útil, mas **não é comparável entre géneros nem entre épocas**.
+::: {.pergunta}
+[P2]{.tag} Os filmes antigos são mesmo melhores?
+:::
+::: {.resposta}
+[Não: é viés de sobrevivência.]{.titulo} Em média, um filme dos anos 20 tem `r sinal(bruto_20)` pontos do que um dos anos 2010. Mas quando comparo só os 500 filmes mais votados de cada década (os que cada época deixou para a história), a vantagem desaparece (`r sinal(canone_20)`). Dos filmes antigos só continuam a ser vistos os bons; dos recentes, entram todos, bons e maus.
+:::
+
+::: {.pergunta}
+[P3]{.tag} Ser popular ajuda a nota da mesma forma em todos os géneros?
+:::
+::: {.resposta}
+[Não.]{.titulo} Em todos os géneros, os filmes mais votados têm nota mais alta, mas esse efeito é até `r round(razao_declives)` vezes maior no western e no terror do que na música e nos documentários. No terror, os filmes pouco vistos costumam ser fracos. Nos documentários, até os pouco vistos têm boas notas, porque quem os vê já gosta do tema.
+:::
+
+::: {.pergunta}
+[P4]{.tag} O realizador importa?
+:::
+::: {.resposta}
+[Muito: é o fator mais forte.]{.titulo} Cerca de `r num(100 * res$p4$icc_controlado, 0)` % das diferenças de nota entre filmes devem-se a quem os realizou, mesmo depois de descontar género, duração, época e popularidade. Saber quem realizou um filme diz mais sobre a nota do que todas as outras variáveis juntas.
+:::
+
+::: {.pergunta}
+[P5]{.tag} Consigo prever se um filme vai ter nota ≥ 7?
+:::
+::: {.resposta}
+[Em parte.]{.titulo} Perante um filme bom e um fraco, o modelo dá maior probabilidade ao bom em `r num(100 * m5$auc[3], 0)` % das vezes (AUC = `r num(m5$auc[3], 2)`). Mas com o corte habitual de 50 % só identifica `r num(100 * m5$sensibilidade[3], 0)` % dos filmes bons. Serve para ordenar e filtrar sugestões, não para decidir sozinho.
+:::
+
+:::
+
+::: {.destaque .destaque-final}
+**Mensagem final:** a nota do IMDb é útil, mas **não é comparável entre géneros nem entre épocas**. Um 7 num filme de terror é mais raro do que um 7 num documentário, e um clássico com 7,5 não é melhor do que um filme atual com a mesma nota.
 :::
 
 ## Limitações

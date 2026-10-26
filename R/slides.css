@@ -14,11 +14,16 @@
 .reveal .nota-rodape { text-align: center; font-size: 0.9em; color: #0b0b0b; }
 .reveal .pequeno { font-size: 0.65em; color: #52514e; }
 .reveal .transformacoes { font-size: 0.62em; color: #52514e; margin-top: 0.6em; line-height: 1.5; }
-.reveal .cartoes { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-top: 0.8em; }
-.reveal .cartao {
-  background: #f6f8fb; border-top: 5px solid #2a78d6; border-radius: 4px;
-  padding: 0.7em 0.7em; font-size: 0.72em; line-height: 1.4; color: #0b0b0b;
+.reveal .conclusoes {
+  display: grid; grid-template-columns: 30% 70%; margin-top: 0.3em;
+  font-size: 0.68em; line-height: 1.35;
 }
-.reveal .cartao p { margin: 0; }
-.reveal .cartao .etiqueta { display: block; font-weight: 700; color: #52514e; text-transform: uppercase; font-size: 0.85em; letter-spacing: 0.03em; }
-.reveal .cartao .valor { display: block; font-size: 2.2em; font-weight: 700; color: #eb6834; margin: 0.25em 0 0.3em; line-height: 1.1; }
+.reveal .conclusoes > div { border-bottom: 1px solid #e1e0d9; padding: 0.45em 0.6em; }
+.reveal .conclusoes p { margin: 0; }
+.reveal .conclusoes .pergunta { font-weight: 700; color: #0d366b; }
+.reveal .conclusoes .tag {
+  display: inline-block; background: #2a78d6; color: #fff; border-radius: 3px;
+  padding: 0 0.35em; margin-right: 0.35em; font-size: 0.9em;
+}
+.reveal .conclusoes .titulo { font-weight: 700; color: #eb6834; margin-right: 0.2em; }
+.reveal .destaque-final { font-size: 0.72em; margin-top: 0.6em; padding: 0.5em 0.8em; }
