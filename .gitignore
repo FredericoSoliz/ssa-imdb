@@ -2,3 +2,13 @@
 .Rhistory
 .RData
 .Ruserdata
+
+# Dados IMDb: licença não comercial, não são redistribuídos (descarregados pelo notebook 01)
+data/
+
+# Artefactos intermédios do Quarto
+/.quarto/
+*_files/
+*.rmarkdown
+
+**/*.quarto_ipynb

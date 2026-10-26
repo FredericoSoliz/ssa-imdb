@@ -1,0 +1,15 @@
+project:
+  type: default
+  # ordem de execução: dados -> exploração -> modelação -> relatório -> slides
+  render:
+    - 01_preparacao.qmd
+    - 02_exploracao.qmd
+    - 03_modelacao.qmd
+    - relatorio.qmd
+    - apresentacao.qmd
+
+lang: pt
+
+execute:
+  warning: false
+  message: false
