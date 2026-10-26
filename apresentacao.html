@@ -506,6 +506,15 @@ padding: 0.6em 0.9em; margin-top: 0.8em; font-size: 1.05em;
 .reveal .legenda { color: #52514e; font-size: 0.8em; margin-bottom: 0.5em; }
 .reveal .nota-rodape { text-align: center; font-size: 0.9em; color: #0b0b0b; }
 .reveal .pequeno { font-size: 0.65em; color: #52514e; }
+.reveal .transformacoes { font-size: 0.62em; color: #52514e; margin-top: 0.6em; line-height: 1.5; }
+.reveal .cartoes { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-top: 0.8em; }
+.reveal .cartao {
+background: #f6f8fb; border-top: 5px solid #2a78d6; border-radius: 4px;
+padding: 0.7em 0.7em; font-size: 0.72em; line-height: 1.4; color: #0b0b0b;
+}
+.reveal .cartao p { margin: 0; }
+.reveal .cartao .etiqueta { display: block; font-weight: 700; color: #52514e; text-transform: uppercase; font-size: 0.85em; letter-spacing: 0.03em; }
+.reveal .cartao .valor { display: block; font-size: 2.2em; font-weight: 700; color: #eb6834; margin: 0.25em 0 0.3em; line-height: 1.1; }
 </style>
   <style type="text/css">.reveal
 div.sourceCode
@@ -1063,52 +1072,73 @@ Frederico Soliz · 2022125511@ufp.edu.pt
 </section>
 <section id="preparação-cada-corte-tem-uma-razão" class="slide level2">
 <h2>Preparação: cada corte tem uma razão</h2>
+<div class="cell">
+<div class="cell-output-display">
 <table class="caption-top">
 <colgroup>
-<col style="width: 33%">
-<col style="width: 33%">
-<col style="width: 33%">
+<col style="width: 26%">
+<col style="width: 21%">
+<col style="width: 37%">
+<col style="width: 13%">
 </colgroup>
 <thead>
 <tr class="header">
-<th>Problema nos dados</th>
-<th>Decisão</th>
-<th>Porquê</th>
+<th style="text-align: left;">Problema</th>
+<th style="text-align: left;">Decisão</th>
+<th style="text-align: left;">Porquê</th>
+<th style="text-align: right;">Filmes restantes</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td>Episódios, curtas, vídeos</td>
-<td>só <code>movie</code>, sem adultos</td>
-<td>outra população, outros votantes</td>
+<td style="text-align: left;">12,9 M títulos de todos os tipos</td>
+<td style="text-align: left;">só <code>movie</code></td>
+<td style="text-align: left;">episódios, curtas e vídeos têm outros votantes</td>
+<td style="text-align: right;">760 577</td>
 </tr>
 <tr class="even">
-<td>Médias de 3 ou 10 votos</td>
-<td><strong>≥ 100 votos</strong></td>
-<td>erro-padrão da média ≈ 0,2 pontos</td>
+<td style="text-align: left;">Conteúdo adulto</td>
+<td style="text-align: left;">excluir</td>
+<td style="text-align: left;">população e lógica de votação diferentes</td>
+<td style="text-align: right;">751 475</td>
 </tr>
 <tr class="odd">
-<td><code>\N</code> na duração/géneros</td>
-<td>remover</td>
-<td>após o filtro só falta ≈ 1 %</td>
+<td style="text-align: left;">Filmes sem nota</td>
+<td style="text-align: left;"><em>join</em> com <code>title.ratings</code></td>
+<td style="text-align: left;">sem variável resposta</td>
+<td style="text-align: right;">346 012</td>
 </tr>
 <tr class="even">
-<td>Durações de 1 a 51 420 min</td>
-<td><strong>40–300 min</strong></td>
-<td>definição de longa-metragem (AMPAS/BFI)</td>
+<td style="text-align: left;">Antes de 1920 e ano de 2026</td>
+<td style="text-align: left;"><strong>1920–2025</strong></td>
+<td style="text-align: left;">poucos votos / votos ainda a acumular</td>
+<td style="text-align: right;">337 312</td>
 </tr>
 <tr class="odd">
-<td><code>&quot;Comedy,Drama,Romance&quot;</code></td>
-<td>21 variáveis 0/1</td>
-<td>ordem alfabética ≠ género principal</td>
+<td style="text-align: left;">Médias de 3 ou 10 votos</td>
+<td style="text-align: left;"><strong>≥ 100 votos</strong></td>
+<td style="text-align: left;">erro-padrão da média ≈ 0,2 pontos</td>
+<td style="text-align: right;">144 772</td>
 </tr>
 <tr class="even">
-<td>Votos muito assimétricos</td>
-<td><code>log10(votos)</code></td>
-<td>assimetria 18,8 → distribuição quase simétrica</td>
+<td style="text-align: left;"><code>\N</code> na duração ou géneros</td>
+<td style="text-align: left;">remover</td>
+<td style="text-align: left;">após o filtro de votos só falta ≈ 1 %</td>
+<td style="text-align: right;">142 832</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Durações de 1 a 51 420 min</td>
+<td style="text-align: left;"><strong>40–300 min</strong></td>
+<td style="text-align: left;">definição de longa-metragem (AMPAS/BFI)</td>
+<td style="text-align: right;">142 734</td>
 </tr>
 </tbody>
 </table>
+</div>
+</div>
+<div class="transformacoes">
+<p><strong>Transformações:</strong> <code>&quot;Comedy,Drama,Romance&quot;</code> → <strong>21 variáveis 0/1</strong> (a ordem é alfabética, não há género principal) · votos → <strong><code>log10(votos)</code></strong> (assimetria 18,8 → quase simétrica) · realizador via <code>title.crew</code> + <code>name.basics</code> · década e idade derivadas do ano</p>
+</div>
 </section>
 <section id="cinco-perguntas" class="slide level2">
 <h2>Cinco perguntas</h2>
@@ -1320,71 +1350,41 @@ Frederico Soliz · 2022125511@ufp.edu.pt
 </section>
 <section id="conclusões" class="slide level2">
 <h2>Conclusões</h2>
-<table class="caption-top">
-<colgroup>
-<col style="width: 50%">
-<col style="width: 50%">
-</colgroup>
-<thead>
-<tr class="header">
-<th></th>
-<th>Resposta</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><strong>P1</strong></td>
-<td>O <strong>género</strong> domina (Documentary +1,5, Horror −0,9); 62 % da nota fica por explicar</td>
-</tr>
-<tr class="even">
-<td><strong>P2</strong></td>
-<td><strong>Viés de sobrevivência:</strong> no cânone de cada década, os antigos não são melhores</td>
-</tr>
-<tr class="odd">
-<td><strong>P3</strong></td>
-<td>O peso da popularidade <strong>varia ~10×</strong> entre géneros</td>
-</tr>
-<tr class="even">
-<td><strong>P4</strong></td>
-<td>O <strong>realizador</strong> explica ~50 % da variância</td>
-</tr>
-<tr class="odd">
-<td><strong>P5</strong></td>
-<td>Previsão razoável (AUC ≈ 0,85), mas falha metade dos filmes bons</td>
-</tr>
-</tbody>
-</table>
+<div class="cartoes">
+<div class="cartao">
+<p><span class="etiqueta">P1 · Fatores</span> <span class="valor">25 p.p.</span> dos 38 % de R² vêm do <strong>género</strong>. Documentary +1,5 e Horror −0,9 pontos. <strong>62 % fica por explicar.</strong></p>
+</div>
+<div class="cartao">
+<p><span class="etiqueta">P2 · Época</span> <span class="valor">+0,7 → −0,3</span> anos 20 vs. 2010: em bruto vs. no <strong>cânone</strong>. A vantagem dos clássicos é <strong>viés de sobrevivência</strong>.</p>
+</div>
+<div class="cartao">
+<p><span class="etiqueta">P3 · Votos × género</span> <span class="valor">9×</span> diferença no “valor” da popularidade entre géneros. Pesa mais em <strong>western e terror</strong>, menos em <strong>documentário e música</strong>.</p>
+</div>
+<div class="cartao">
+<p><span class="etiqueta">P4 · Realizador</span> <span class="valor">50 %</span> da variância está <strong>entre realizadores</strong>, mesmo depois de controlar género, duração, década e votos.</p>
+</div>
+<div class="cartao">
+<p><span class="etiqueta">P5 · Previsão</span> <span class="valor">AUC 0,85</span> o <em>random forest</em> discrimina bem, mas com limiar 0,5 deteta só 42 % dos filmes ≥ 7.</p>
+</div>
+</div>
 <div class="destaque">
 <p>A nota do IMDb é útil, mas <strong>não é comparável entre géneros nem entre épocas</strong>.</p>
 </div>
 </section>
-<section id="limitações-e-trabalho-futuro" class="slide level2">
-<h2>Limitações e trabalho futuro</h2>
-<div class="columns">
-<div class="column" style="width:50%;">
-<p><strong>Limitações</strong></p>
+<section id="limitações" class="slide level2">
+<h2>Limitações</h2>
 <ul>
-<li>Quem vota no IMDb ≠ público em geral</li>
-<li>Possível manipulação de votos em nichos</li>
-<li>Associação, não causalidade</li>
-<li><em>Snapshot</em>: a década de 2020 ainda está a mudar</li>
-<li>Limiar de 100 votos é uma escolha</li>
+<li><strong>Quem vota no IMDb ≠ público em geral:</strong> a amostra é autosselecionada e a nota mede o entusiasmo de quem decide votar.</li>
+<li><strong>Possível manipulação de votos:</strong> realizadores de nicho com notas perto de 9 e poucas centenas de votos.</li>
+<li><strong>Associação, não causalidade:</strong> nenhum modelo diz que alongar um filme <em>causa</em> melhor nota.</li>
+<li><strong>Snapshot de uma data:</strong> os filmes dos anos 2020 ainda estão a acumular votos.</li>
+<li><strong>Escolhas de limpeza:</strong> o limiar de 100 votos e o intervalo de 40–300 min são decisões justificadas, mas não únicas.</li>
+<li><strong>Crítica vs. público:</strong> o IMDb não publica notas da crítica, por isso esta comparação ficou de fora.</li>
 </ul>
-</div><div class="column" style="width:50%;">
-<p><strong>Trabalho futuro</strong></p>
-<ul>
-<li>Crítica vs. público (motivação original)</li>
-<li>Validação temporal (treinar ≤ 2015)</li>
-<li>Sensibilidade ao limiar de votos</li>
-<li>País/língua (<code>title.akas</code>), elenco</li>
-<li>“Nota ajustada” por género e época</li>
-</ul>
-</div></div>
 </section>
 <section id="obrigado" class="slide level2 center">
 <h2>Obrigado</h2>
 <p><strong>Repositório:</strong> <a href="https://github.com/FredericoSoliz/ssa-imdb" class="uri">https://github.com/FredericoSoliz/ssa-imdb</a></p>
-<p>Relatório reprodutível: <code>quarto render</code> na raiz do projeto</p>
 <div class="pequeno">
 <p>R · Quarto · data.table · dplyr · ggplot2 · lme4 · ranger · pROC</p>
 </div>
