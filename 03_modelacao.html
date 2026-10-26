@@ -2602,7 +2602,7 @@ window.Quarto = {
 </section>
 <section id="p2-os-filmes-antigos-são-melhores-ou-é-viés-de-sobrevivência" class="level2">
 <h2 class="anchored" data-anchor-id="p2-os-filmes-antigos-são-melhores-ou-é-viés-de-sobrevivência">P2 — Os filmes antigos são melhores ou é viés de sobrevivência?</h2>
-<p>Comparamos o efeito da década em três especificações:</p>
+<p>Comparo o efeito da década em três especificações:</p>
 <ol type="1">
 <li><strong>Bruto:</strong> <code>nota ~ década</code>, sem controlos.</li>
 <li><strong>Controlado:</strong> o modelo P1 completo (género, duração, votos).</li>
@@ -2771,7 +2771,7 @@ window.Quarto = {
 </section>
 <section id="p3-a-relação-entre-popularidade-e-nota-é-igual-em-todos-os-géneros" class="level2">
 <h2 class="anchored" data-anchor-id="p3-a-relação-entre-popularidade-e-nota-é-igual-em-todos-os-géneros">P3 — A relação entre popularidade e nota é igual em todos os géneros?</h2>
-<p>Ajustamos o modelo de P1 com a interação <code>log_votos × género</code> e comparamos com o modelo sem interação (teste F). Para visualizar, estimamos o declive da nota em função de log₁₀(votos) dentro de cada género (controlando duração e década).</p>
+<p>Ajusto o modelo de P1 com a interação <code>log_votos × género</code> e comparo-o com o modelo sem interação (teste F). Para visualizar, estimo o declive da nota em função de log₁₀(votos) dentro de cada género (controlando duração e década).</p>
 <div class="cell">
 <details open class="code-fold">
 <summary>Código</summary>
@@ -2848,7 +2848,7 @@ Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&
 <p><strong>Modelo linear misto</strong> com intercepto aleatório por realizador, restrito a realizadores com pelo menos 3 filmes na amostra (com 1 ou 2 filmes não é possível separar o “estilo” do realizador do acaso).</p>
 <ul>
 <li>O <strong>ICC</strong> (coeficiente de correlação intraclasse) mede a proporção da variância da nota que se deve a diferenças <strong>entre</strong> realizadores.</li>
-<li>Calcula-se primeiro sem preditores (modelo nulo) e depois controlando os fatores de P1, para perceber quanto do “efeito realizador” vai além de ele fazer certos géneros ou filmes mais longos.</li>
+<li>Calculo-o primeiro sem preditores (modelo nulo) e depois controlando os fatores de P1, para perceber quanto do “efeito realizador” vai além de ele fazer certos géneros ou filmes mais longos.</li>
 </ul>
 <div class="cell">
 <details open class="code-fold">
@@ -3109,7 +3109,7 @@ Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&
 </section>
 <section id="p5-é-possível-prever-se-um-filme-terá-nota-7" class="level2">
 <h2 class="anchored" data-anchor-id="p5-é-possível-prever-se-um-filme-terá-nota-7">P5 — É possível prever se um filme terá nota ≥ 7?</h2>
-<p>Uma nota ≥ 7 é um limiar prático (“vale a pena ver”). Comparamos:</p>
+<p>Uma nota ≥ 7 é um limiar prático (“vale a pena ver”). Comparo:</p>
 <ul>
 <li><strong>Regressão logística:</strong> modelo interpretável, com as mesmas variáveis e <em>splines</em> de P1;</li>
 <li><strong><em>Random forest</em></strong> (<code>ranger</code>, 300 árvores): capta interações e não linearidades automaticamente.</li>
@@ -3146,7 +3146,7 @@ Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&
 <span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>               <span class="at">importance =</span> <span class="st">&quot;impurity&quot;</span>, <span class="at">seed =</span> <span class="dv">2026</span>, <span class="at">num.threads =</span> <span class="dv">4</span>)</span></code></pre></div><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
-<pre><code>Growing trees.. Progress: 87%. Estimated remaining time: 4 seconds.</code></pre>
+<pre><code>Growing trees.. Progress: 90%. Estimated remaining time: 3 seconds.</code></pre>
 </div>
 <details open class="code-fold">
 <summary>Código</summary>

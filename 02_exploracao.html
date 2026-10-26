@@ -2483,7 +2483,7 @@ vertical-align: -.125em;
 <span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="fu">guardar_fig</span>(g_nota, <span class="st">&quot;02_distribuicao_nota&quot;</span>)</span></code></pre></div><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 </div>
-<p>A distribuição tem <strong>assimetria negativa</strong> (cauda para as notas baixas): poucos filmes ficam abaixo de 4, mas os que ficam vão até 1. Para uma regressão linear isto não é um problema grave, porque o pressuposto de normalidade é sobre os resíduos e não sobre a variável resposta, e com mais de 100 mil observações os testes são robustos. Será verificado nos resíduos.</p>
+<p>A distribuição tem <strong>assimetria negativa</strong> (cauda para as notas baixas): poucos filmes ficam abaixo de 4, mas os que ficam vão até 1. Para uma regressão linear isto não é um problema grave, porque o pressuposto de normalidade é sobre os resíduos e não sobre a variável resposta, e com mais de 100 mil observações os testes são robustos. Vou verificá-lo nos resíduos.</p>
 </section>
 <section id="popularidade-número-de-votos" class="level2">
 <h2 class="anchored" data-anchor-id="popularidade-número-de-votos">3. Popularidade: número de votos</h2>
@@ -2508,7 +2508,7 @@ vertical-align: -.125em;
 <span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="fu">guardar_fig</span>(g_votos, <span class="st">&quot;02_distribuicao_votos&quot;</span>, <span class="at">altura =</span> <span class="dv">4</span>)</span></code></pre></div><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 </div>
-<p>A distribuição dos votos é extremamente enviesada: a mediana é de 474 votos e o máximo ultrapassa 3.3 milhões. Na escala logarítmica fica aproximadamente simétrica, o que justifica usar <code>log_votos</code> nos modelos. Os 3.3 milhões não são removidos como <em>outlier</em>: são filmes reais e muito populares, e é precisamente esse fenómeno que queremos estudar.</p>
+<p>A distribuição dos votos é extremamente enviesada: a mediana é de 474 votos e o máximo ultrapassa 3.3 milhões. Na escala logarítmica fica aproximadamente simétrica, o que justifica usar <code>log_votos</code> nos modelos. Os 3.3 milhões não são removidos como <em>outlier</em>: são filmes reais e muito populares, e é precisamente esse fenómeno que quero estudar.</p>
 </section>
 <section id="nota-e-época" class="level2">
 <h2 class="anchored" data-anchor-id="nota-e-época">4. Nota e época</h2>
@@ -2597,7 +2597,7 @@ vertical-align: -.125em;
 <span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a><span class="fu">guardar_fig</span>(g_generos, <span class="st">&quot;02_nota_genero&quot;</span>, <span class="at">altura =</span> <span class="fl">6.5</span>)</span></code></pre></div><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 </div>
-<p>O género separa claramente as notas: a diferença entre o género mais bem avaliado e o pior é de cerca de 2.3 pontos, maior do que qualquer diferença entre décadas. Como um filme pode ter até 3 géneros, este gráfico conta o mesmo filme várias vezes. Nos modelos usam-se variáveis binárias, para isolar o efeito de cada género mantendo os outros constantes.</p>
+<p>O género separa claramente as notas: a diferença entre o género mais bem avaliado e o pior é de cerca de 2.3 pontos, maior do que qualquer diferença entre décadas. Como um filme pode ter até 3 géneros, este gráfico conta o mesmo filme várias vezes. Nos modelos uso variáveis binárias, para isolar o efeito de cada género mantendo os outros constantes.</p>
 </section>
 <section id="duração-e-popularidade-vs.-nota" class="level2">
 <h2 class="anchored" data-anchor-id="duração-e-popularidade-vs.-nota">6. Duração e popularidade vs. nota</h2>

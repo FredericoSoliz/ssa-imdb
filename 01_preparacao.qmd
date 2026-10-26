@@ -30,7 +30,7 @@ dir.create("figuras", showWarnings = FALSE)
 
 ## 1. Aquisição
 
-Fonte: [IMDb Non-Commercial Datasets](https://developer.imdb.com/non-commercial-datasets/). Usamos quatro ficheiros TSV comprimidos:
+Fonte: [IMDb Non-Commercial Datasets](https://developer.imdb.com/non-commercial-datasets/). Uso quatro ficheiros TSV comprimidos:
 
 | Ficheiro | Conteúdo | Para quê |
 |---|---|---|
@@ -69,9 +69,9 @@ Particularidades do formato que obrigam a opções explícitas no `fread()`:
 
 * valores em falta codificados como `\N` (`na.strings = "\\N"`);
 * títulos com aspas não balanceadas, que partem a leitura se `quote` não for desligado;
-* `title.basics` tem ~13 milhões de linhas (episódios de séries, curtas, jogos…). Para caber num computador pessoal, só lemos as colunas necessárias e filtramos de imediato.
+* `title.basics` tem ~13 milhões de linhas (episódios de séries, curtas, jogos…). Para caber num computador pessoal, só leio as colunas necessárias e filtro de imediato.
 
-O `data.table::fread()` foi escolhido em vez do `readr` pela velocidade e menor uso de memória nestes volumes.
+Escolhi o `data.table::fread()` em vez do `readr` pela velocidade e menor uso de memória nestes volumes.
 
 ```{r}
 #| label: importar-basics
@@ -137,7 +137,7 @@ g_omissos <- ggplot(omissos_tab, aes(x = prop_na, y = variavel, fill = fase)) +
 guardar_fig(g_omissos, "01_omissos", altura = 3.5)
 ```
 
-**Leitura:** no catálogo completo falta a duração em mais de um terço dos filmes, mas quase todos esses casos são filmes obscuros sem votos. Depois de exigir um mínimo de votos, a falta de dados torna-se marginal (≈1 %). Por isso **removemos** os casos incompletos em vez de imputar: a imputação introduziria valores inventados para uma fração mínima dos dados, sem ganho para as conclusões.
+**Leitura:** no catálogo completo falta a duração em mais de um terço dos filmes, mas quase todos esses casos são filmes obscuros sem votos. Depois de exigir um mínimo de votos, a falta de dados torna-se marginal (≈1 %). Por isso **removo** os casos incompletos em vez de imputar: a imputação introduziria valores inventados para uma fração mínima dos dados, sem ganho para as conclusões.
 
 ## 4. Limpeza: funil de decisões
 
@@ -173,7 +173,7 @@ kable(funil, col.names = c("Passo", "Filmes restantes"), format.args = list(big.
 
 * **1920–2025:** antes de 1920 há poucos filmes com votos suficientes (são sobretudo curiosidades históricas). O ano do *snapshot* (`r ano_snapshot`) é excluído porque esses filmes ainda estão a acumular votos e a nota não estabilizou.
 * **≥ 100 votos:** uma média de 3 ou 10 votos é dominada pelo acaso (amigos da equipa, *review bombing*). Com 100 votos o erro-padrão de uma média com desvio-padrão ≈ 2 pontos fica em ≈ 0,2 pontos. O limiar é um compromisso, que fica discutido nas limitações.
-* **40–300 minutos:** 40 minutos é a definição de longa-metragem usada pela Academia (AMPAS) e pelo BFI. Acima de 300 minutos encontram-se casos extremos (instalações artísticas, filmes experimentais com mais de 24 horas) que não pertencem à mesma população. Pelo critério IQR (1,5 × IQR) seriam *outliers* muitos filmes perfeitamente normais de 2h40, por isso preferimos um critério de domínio.
+* **40–300 minutos:** 40 minutos é a definição de longa-metragem usada pela Academia (AMPAS) e pelo BFI. Acima de 300 minutos encontram-se casos extremos (instalações artísticas, filmes experimentais com mais de 24 horas) que não pertencem à mesma população. Pelo critério IQR (1,5 × IQR) seriam *outliers* muitos filmes perfeitamente normais de 2h40, por isso preferi um critério de domínio.
 
 ```{r}
 #| label: outliers-iqr
@@ -185,8 +185,8 @@ c(limite_inferior = limites_iqr[[1]], limite_superior = limites_iqr[[2]],
 
 ## 5. Transformações
 
-* **Géneros:** a coluna `genres` junta até três géneros numa só célula (`"Comedy,Drama,Romance"`). O IMDb lista-os por **ordem alfabética**, por isso o primeiro género *não* é o principal. Por isso criamos uma variável binária (0/1) por género, em vez de escolher um único género.
-* **Realizador:** `directors` pode ter vários IDs. Usamos o primeiro (≈ 9 % dos filmes têm co-realização) e juntamos o nome a partir de `name.basics`.
+* **Géneros:** a coluna `genres` junta até três géneros numa só célula (`"Comedy,Drama,Romance"`). O IMDb lista-os por **ordem alfabética**, por isso o primeiro género *não* é o principal. Por isso crio uma variável binária (0/1) por género, em vez de escolher um único género.
+* **Realizador:** `directors` pode ter vários IDs. Uso o primeiro (≈ 9 % dos filmes têm co-realização) e junto o nome a partir de `name.basics`.
 * **Variáveis derivadas:** década, idade do filme, log₁₀(votos), número de géneros.
 
 ```{r}
@@ -237,7 +237,7 @@ freq_generos <- filmes_limpos |>
 kable(freq_generos, digits = 3, format.args = list(big.mark = " "))
 ```
 
-Géneros com muito poucos filmes (ex.: *Adult*, *News*, *Reality-TV*, *Talk-Show*) não são fiáveis para estimar efeitos. Nos modelos usamos apenas os géneros com pelo menos 1 % dos filmes.
+Géneros com muito poucos filmes (ex.: *Adult*, *News*, *Reality-TV*, *Talk-Show*) não são fiáveis para estimar efeitos. Nos modelos uso apenas os géneros com pelo menos 1 % dos filmes.
 
 ```{r}
 #| label: guardar

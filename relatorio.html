@@ -2239,7 +2239,6 @@ vertical-align: -.125em;
   <li><a href="#enviesamentos-e-limitações-dos-dados" id="toc-enviesamentos-e-limitações-dos-dados" class="nav-link" data-scroll-target="#enviesamentos-e-limitações-dos-dados"><span class="header-section-number">5.2</span> Enviesamentos e limitações dos dados</a></li>
   </ul></li>
   <li><a href="#limitações-e-trabalho-futuro" id="toc-limitações-e-trabalho-futuro" class="nav-link" data-scroll-target="#limitações-e-trabalho-futuro"><span class="header-section-number">6</span> Limitações e trabalho futuro</a></li>
-  <li><a href="#uso-de-inteligência-artificial" id="toc-uso-de-inteligência-artificial" class="nav-link" data-scroll-target="#uso-de-inteligência-artificial">Uso de inteligência artificial</a></li>
   <li><a href="#anexos" id="toc-anexos" class="nav-link" data-scroll-target="#anexos">Anexos</a></li>
   </ul>
 </nav>
@@ -2289,7 +2288,7 @@ vertical-align: -.125em;
 <p><strong>Repositório Git:</strong> <a href="https://github.com/FredericoSoliz/ssa-imdb" class="uri">https://github.com/FredericoSoliz/ssa-imdb</a></p>
 <section id="resumo-executivo" class="level1 unnumbered">
 <h1 class="unnumbered">Resumo executivo</h1>
-<p>Este trabalho investiga se a nota média de um filme no IMDb reflete a sua qualidade ou se depende de fatores estruturais como o género, a duração, a época e a popularidade. A partir dos ficheiros públicos do IMDb (12 898 691 títulos), construímos um conjunto limpo de 142 734 longas-metragens com pelo menos 100 votos e respondemos a cinco perguntas com regressão linear, modelos mistos e classificação supervisionada. <strong>O género é, de longe, o fator mais associado à nota</strong> (sozinho explica 25 pontos percentuais dos 38 % de variância explicada). Documentários e animação partem com vantagem, terror e ficção científica com desvantagem. <strong>A ideia de que “os filmes antigos eram melhores” é sobretudo um viés de sobrevivência:</strong> comparando apenas os 500 filmes mais votados de cada década, a vantagem das décadas antigas desaparece. O realizador explica cerca de metade da variância da nota, e um modelo <em>random forest</em> prevê se um filme terá nota ≥ 7 com AUC de 0,85.</p>
+<p>Neste trabalho investigo se a nota média de um filme no IMDb reflete a sua qualidade ou se depende de fatores estruturais como o género, a duração, a época e a popularidade. A partir dos ficheiros públicos do IMDb (12 898 691 títulos), construí um conjunto limpo de 142 734 longas-metragens com pelo menos 100 votos e respondi a cinco perguntas com regressão linear, modelos mistos e classificação supervisionada. <strong>O género é, de longe, o fator mais associado à nota</strong> (sozinho explica 25 pontos percentuais dos 38 % de variância explicada). Documentários e animação partem com vantagem, terror e ficção científica com desvantagem. <strong>A ideia de que “os filmes antigos eram melhores” é sobretudo um viés de sobrevivência:</strong> comparando apenas os 500 filmes mais votados de cada década, a vantagem das décadas antigas desaparece. O realizador explica cerca de metade da variância da nota, e um modelo <em>random forest</em> prevê se um filme terá nota ≥ 7 com AUC de 0,85.</p>
 </section>
 <section id="introdução" class="level1" data-number="1">
 <h1 data-number="1"><span class="header-section-number">1</span> Introdução</h1>
@@ -2344,7 +2343,7 @@ vertical-align: -.125em;
 </tr>
 </tbody>
 </table>
-<p>Face ao M1, as três perguntas iniciais foram mantidas e reformuladas para serem testáveis. Acrescentaram-se a P4 (que exigiu juntar mais duas tabelas, <code>title.crew</code> e <code>name.basics</code>) e a P5 (avaliação preditiva com métricas fora da amostra). A comparação entre a nota do público e a da crítica, referida na motivação do M1, <strong>não</strong> é possível com estes dados, porque o IMDb não publica notas da crítica. Passou por isso para trabalho futuro.</p>
+<p>Face ao M1, mantive as três perguntas iniciais e reformulei-as para serem testáveis. Acrescentei a P4 (que exigiu juntar mais duas tabelas, <code>title.crew</code> e <code>name.basics</code>) e a P5 (avaliação preditiva com métricas fora da amostra). A comparação entre a nota do público e a da crítica, referida na motivação do M1, <strong>não</strong> é possível com estes dados, porque o IMDb não publica notas da crítica. Por isso, passei-a para trabalho futuro.</p>
 </section>
 </section>
 <section id="metodologia-e-dados" class="level1" data-number="2">
@@ -2486,7 +2485,7 @@ Tabela 1: Funil de limpeza: filmes restantes após cada passo
 </tr>
 <tr class="odd">
 <td>Duração entre 40 e 300 min</td>
-<td>40 min é a definição de longa-metragem (AMPAS/BFI). O critério IQR (1,5×) cortaria filmes normais acima de 140 min, por isso usou-se um critério de domínio</td>
+<td>40 min é a definição de longa-metragem (AMPAS/BFI). O critério IQR (1,5×) cortaria filmes normais acima de 140 min, por isso usei um critério de domínio</td>
 </tr>
 <tr class="even">
 <td>Géneros → 21 variáveis binárias</td>
@@ -2817,7 +2816,7 @@ Figura 3: Distribuição do número de votos em escala linear e logarítmica
 </figcaption>
 </figure>
 </div>
-<p>A popularidade é extremamente desigual. A mediana é de 474 votos, mas há filmes com mais de 3 milhões (<a href="#fig-votos" class="quarto-xref">Figura 3</a>). Estes casos não são erros a remover: são o fenómeno que queremos estudar. Por isso usa-se <code>log10(votos)</code>.</p>
+<p>A popularidade é extremamente desigual. A mediana é de 474 votos, mas há filmes com mais de 3 milhões (<a href="#fig-votos" class="quarto-xref">Figura 3</a>). Estes casos não são erros a remover: são o fenómeno que quero estudar. Por isso uso <code>log10(votos)</code>.</p>
 <div id="fig-genero" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
 <div aria-describedby="fig-genero-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
@@ -2867,7 +2866,7 @@ Figura 7: Duração, popularidade e nota
 <h1 data-number="4"><span class="header-section-number">4</span> Modelação e resultados</h1>
 <section id="p1-que-fatores-explicam-a-nota" class="level2" data-number="4.1">
 <h2 data-number="4.1" class="anchored" data-anchor-id="p1-que-fatores-explicam-a-nota"><span class="header-section-number">4.1</span> P1 — Que fatores explicam a nota?</h2>
-<p>O modelo de regressão linear múltipla (géneros + <em>spline</em> da duração + década + <em>spline</em> de log₁₀ votos) explica <strong>R² = 0,380</strong> da variância da nota. Para medir o peso de cada fator, retirou-se cada bloco de variáveis e mediu-se quanto R² o modelo perde:</p>
+<p>O modelo de regressão linear múltipla (géneros + <em>spline</em> da duração + década + <em>spline</em> de log₁₀ votos) explica <strong>R² = 0,380</strong> da variância da nota. Para medir o peso de cada fator, retirei cada bloco de variáveis e medi quanto R² o modelo perde:</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Ver código</summary>
@@ -3112,7 +3111,7 @@ Tabela 5: Realizadores amplamente vistos (mediana ≥ 20 mil votos, ≥ 8 filme
 </section>
 <section id="p5-é-possível-prever-se-um-filme-terá-nota-7" class="level2" data-number="4.5">
 <h2 data-number="4.5" class="anchored" data-anchor-id="p5-é-possível-prever-se-um-filme-terá-nota-7"><span class="header-section-number">4.5</span> P5 — É possível prever se um filme terá nota ≥ 7?</h2>
-<p>20,2 % dos filmes têm nota ≥ 7. Dividiram-se os dados em treino (80 %) e teste (20 %) e compararam-se dois modelos com um modelo de referência que prevê sempre “não”:</p>
+<p>20,2 % dos filmes têm nota ≥ 7. Dividi os dados em treino (80 %) e teste (20 %) e comparei dois modelos com um modelo de referência que prevê sempre “não”:</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Ver código</summary>
@@ -3243,7 +3242,7 @@ Figura 15: Curvas ROC e importância das variáveis
 </section>
 <section id="limitações-e-trabalho-futuro" class="level1" data-number="6">
 <h1 data-number="6"><span class="header-section-number">6</span> Limitações e trabalho futuro</h1>
-<p><strong>Dificuldades encontradas:</strong> o volume dos ficheiros (≈ 13 milhões de linhas) obrigou a ler só as colunas necessárias e a filtrar logo na importação. As aspas não balanceadas nos títulos partiam a leitura até se desligar o <code>quote</code>. E os coeficientes de variáveis lógicas no R (<code>g_DramaTRUE</code>) exigiram cuidado ao extrair resultados.</p>
+<p><strong>Dificuldades encontradas:</strong> o volume dos ficheiros (≈ 13 milhões de linhas) obrigou-me a ler só as colunas necessárias e a filtrar logo na importação. As aspas não balanceadas nos títulos partiam a leitura até eu desligar o <code>quote</code>. E os coeficientes de variáveis lógicas no R (<code>g_DramaTRUE</code>) exigiram-me cuidado ao extrair resultados.</p>
 <p><strong>Trabalho futuro:</strong></p>
 <ul>
 <li><strong>Crítica vs. público</strong>, a motivação original: cruzar com notas da crítica (Metacritic/Rotten Tomatoes), se houver uma fonte aberta e com licença compatível;</li>
@@ -3252,10 +3251,6 @@ Figura 15: Curvas ROC e importância das variáveis
 <li><strong>Mais variáveis:</strong> país e língua de origem (<code>title.akas</code>), elenco (<code>title.principals</code>) e orçamento;</li>
 <li><strong>Aplicação:</strong> uma “nota ajustada” que corrija o efeito do género e da época, para comparações mais justas num sistema de recomendação.</li>
 </ul>
-</section>
-<section id="uso-de-inteligência-artificial" class="level1 unnumbered">
-<h1 class="unnumbered">Uso de inteligência artificial</h1>
-<p>De acordo com as regras da unidade curricular, declara-se que foi usado um assistente de IA (Claude) como auxiliar na estruturação do código R, na revisão de texto e na sugestão de visualizações. A definição do problema, as decisões de análise e a interpretação dos resultados são da responsabilidade do autor, que as defende presencialmente sem recurso a IA. O histórico de <em>commits</em> no repositório documenta a evolução do trabalho.</p>
 </section>
 <section id="anexos" class="level1 unnumbered">
 <h1 class="unnumbered">Anexos</h1>

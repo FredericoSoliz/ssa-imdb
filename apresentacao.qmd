@@ -34,7 +34,7 @@ m5    <- res$p5_metricas
 ::: {.column width="55%"}
 * O IMDb é a minha referência para escolher o que ver.
 * Mas um **8 num filme de terror** vale o mesmo que um **8 num drama**?
-* E os clássicos são mesmo melhores, ou só nos lembramos dos bons?
+* E os clássicos são mesmo melhores, ou só os bons sobrevivem na memória?
 :::
 ::: {.column width="45%"}
 ::: {.destaque}

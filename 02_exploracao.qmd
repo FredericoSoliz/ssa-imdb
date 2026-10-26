@@ -74,7 +74,7 @@ g_nota <- ggplot(filmes, aes(nota)) +
 guardar_fig(g_nota, "02_distribuicao_nota")
 ```
 
-A distribuição tem **assimetria negativa** (cauda para as notas baixas): poucos filmes ficam abaixo de 4, mas os que ficam vão até 1. Para uma regressão linear isto não é um problema grave, porque o pressuposto de normalidade é sobre os resíduos e não sobre a variável resposta, e com mais de 100 mil observações os testes são robustos. Será verificado nos resíduos.
+A distribuição tem **assimetria negativa** (cauda para as notas baixas): poucos filmes ficam abaixo de 4, mas os que ficam vão até 1. Para uma regressão linear isto não é um problema grave, porque o pressuposto de normalidade é sobre os resíduos e não sobre a variável resposta, e com mais de 100 mil observações os testes são robustos. Vou verificá-lo nos resíduos.
 
 ## 3. Popularidade: número de votos
 
@@ -98,7 +98,7 @@ g_votos <- (g_votos_lin | g_votos_log) +
 guardar_fig(g_votos, "02_distribuicao_votos", altura = 4)
 ```
 
-A distribuição dos votos é extremamente enviesada: a mediana é de `r format(median(filmes$votos), big.mark = " ")` votos e o máximo ultrapassa `r format(round(max(filmes$votos) / 1e6, 1))` milhões. Na escala logarítmica fica aproximadamente simétrica, o que justifica usar `log_votos` nos modelos. Os `r format(round(max(filmes$votos)/1e6,1))` milhões não são removidos como *outlier*: são filmes reais e muito populares, e é precisamente esse fenómeno que queremos estudar.
+A distribuição dos votos é extremamente enviesada: a mediana é de `r format(median(filmes$votos), big.mark = " ")` votos e o máximo ultrapassa `r format(round(max(filmes$votos) / 1e6, 1))` milhões. Na escala logarítmica fica aproximadamente simétrica, o que justifica usar `log_votos` nos modelos. Os `r format(round(max(filmes$votos)/1e6,1))` milhões não são removidos como *outlier*: são filmes reais e muito populares, e é precisamente esse fenómeno que quero estudar.
 
 ## 4. Nota e época
 
@@ -186,7 +186,7 @@ g_generos <- generos |>
 guardar_fig(g_generos, "02_nota_genero", altura = 6.5)
 ```
 
-O género separa claramente as notas: a diferença entre o género mais bem avaliado e o pior é de cerca de `r round(max(por_genero$media) - min(por_genero$media), 1)` pontos, maior do que qualquer diferença entre décadas. Como um filme pode ter até 3 géneros, este gráfico conta o mesmo filme várias vezes. Nos modelos usam-se variáveis binárias, para isolar o efeito de cada género mantendo os outros constantes.
+O género separa claramente as notas: a diferença entre o género mais bem avaliado e o pior é de cerca de `r round(max(por_genero$media) - min(por_genero$media), 1)` pontos, maior do que qualquer diferença entre décadas. Como um filme pode ter até 3 géneros, este gráfico conta o mesmo filme várias vezes. Nos modelos uso variáveis binárias, para isolar o efeito de cada género mantendo os outros constantes.
 
 ## 6. Duração e popularidade vs. nota
 

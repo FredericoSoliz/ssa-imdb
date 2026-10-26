@@ -49,7 +49,7 @@ m5 <- res$p5_metricas
 
 # Resumo executivo {.unnumbered}
 
-Este trabalho investiga se a nota média de um filme no IMDb reflete a sua qualidade ou se depende de fatores estruturais como o género, a duração, a época e a popularidade. A partir dos ficheiros públicos do IMDb (`r fmt(funil$n[1])` títulos), construímos um conjunto limpo de `r fmt(n_final)` longas-metragens com pelo menos 100 votos e respondemos a cinco perguntas com regressão linear, modelos mistos e classificação supervisionada. **O género é, de longe, o fator mais associado à nota** (sozinho explica `r num(100 * res$p1_importancia$delta_r2[1], 0)` pontos percentuais dos `r num(100 * res$p1_r2, 0)` % de variância explicada). Documentários e animação partem com vantagem, terror e ficção científica com desvantagem. **A ideia de que "os filmes antigos eram melhores" é sobretudo um viés de sobrevivência:** comparando apenas os 500 filmes mais votados de cada década, a vantagem das décadas antigas desaparece. O realizador explica cerca de metade da variância da nota, e um modelo *random forest* prevê se um filme terá nota ≥ 7 com AUC de `r num(m5$auc[3], 2)`.
+Neste trabalho investigo se a nota média de um filme no IMDb reflete a sua qualidade ou se depende de fatores estruturais como o género, a duração, a época e a popularidade. A partir dos ficheiros públicos do IMDb (`r fmt(funil$n[1])` títulos), construí um conjunto limpo de `r fmt(n_final)` longas-metragens com pelo menos 100 votos e respondi a cinco perguntas com regressão linear, modelos mistos e classificação supervisionada. **O género é, de longe, o fator mais associado à nota** (sozinho explica `r num(100 * res$p1_importancia$delta_r2[1], 0)` pontos percentuais dos `r num(100 * res$p1_r2, 0)` % de variância explicada). Documentários e animação partem com vantagem, terror e ficção científica com desvantagem. **A ideia de que "os filmes antigos eram melhores" é sobretudo um viés de sobrevivência:** comparando apenas os 500 filmes mais votados de cada década, a vantagem das décadas antigas desaparece. O realizador explica cerca de metade da variância da nota, e um modelo *random forest* prevê se um filme terá nota ≥ 7 com AUC de `r num(m5$auc[3], 2)`.
 
 # Introdução
 
@@ -71,7 +71,7 @@ A resposta interessa a quem usa estas notas para decidir (espectadores, platafor
 | **P4** | Quanto da nota se deve ao realizador, para além das características do filme? | Modelo linear misto, ICC |
 | **P5** | É possível prever se um filme terá nota ≥ 7 a partir das suas características? | Regressão logística vs. *random forest* |
 
-Face ao M1, as três perguntas iniciais foram mantidas e reformuladas para serem testáveis. Acrescentaram-se a P4 (que exigiu juntar mais duas tabelas, `title.crew` e `name.basics`) e a P5 (avaliação preditiva com métricas fora da amostra). A comparação entre a nota do público e a da crítica, referida na motivação do M1, **não** é possível com estes dados, porque o IMDb não publica notas da crítica. Passou por isso para trabalho futuro.
+Face ao M1, mantive as três perguntas iniciais e reformulei-as para serem testáveis. Acrescentei a P4 (que exigiu juntar mais duas tabelas, `title.crew` e `name.basics`) e a P5 (avaliação preditiva com métricas fora da amostra). A comparação entre a nota do público e a da crítica, referida na motivação do M1, **não** é possível com estes dados, porque o IMDb não publica notas da crítica. Por isso, passei-a para trabalho futuro.
 
 # Metodologia e dados
 
@@ -112,7 +112,7 @@ kable(funil |> mutate(n = fmt(n)), col.names = c("Passo", "Filmes"), align = "lr
 | 1920–2025 | Antes de 1920 há muito poucos filmes votados; em 2026 os filmes ainda estão a acumular votos |
 | ≥ 100 votos | A média de poucos votos é dominada pelo acaso; com 100 votos o erro-padrão da média fica em ≈ 0,2 pontos |
 | Remover duração/género em falta | No conjunto votado faltam em apenas ≈ 1 % dos filmes ([Figura @fig-omissos]); imputar acrescentaria ruído sem benefício |
-| Duração entre 40 e 300 min | 40 min é a definição de longa-metragem (AMPAS/BFI). O critério IQR (1,5×) cortaria filmes normais acima de `r round(meta$limites_iqr[2])` min, por isso usou-se um critério de domínio |
+| Duração entre 40 e 300 min | 40 min é a definição de longa-metragem (AMPAS/BFI). O critério IQR (1,5×) cortaria filmes normais acima de `r round(meta$limites_iqr[2])` min, por isso usei um critério de domínio |
 | Géneros → 21 variáveis binárias | O IMDb ordena os géneros alfabeticamente, por isso o "primeiro género" não é o principal |
 | `log10(votos)` | Os votos têm assimetria `r num(desc$assimetria[desc$variavel == "votos"], 1)`; em escala log ficam quase simétricos |
 
@@ -144,7 +144,7 @@ A nota média é `r num(desc$media[1])` (mediana `r num(desc$mediana[1], 1)`), c
 
 ![Distribuição do número de votos em escala linear e logarítmica](figuras/02_distribuicao_votos.png){#fig-votos width=95%}
 
-A popularidade é extremamente desigual. A mediana é de `r fmt(desc$mediana[2])` votos, mas há filmes com mais de 3 milhões ([Figura @fig-votos]). Estes casos não são erros a remover: são o fenómeno que queremos estudar. Por isso usa-se `log10(votos)`.
+A popularidade é extremamente desigual. A mediana é de `r fmt(desc$mediana[2])` votos, mas há filmes com mais de 3 milhões ([Figura @fig-votos]). Estes casos não são erros a remover: são o fenómeno que quero estudar. Por isso uso `log10(votos)`.
 
 ![Nota por género](figuras/02_nota_genero.png){#fig-genero width=90%}
 
@@ -166,7 +166,7 @@ As relações com a duração e com os votos são claramente não lineares ([Fig
 
 ## P1 — Que fatores explicam a nota?
 
-O modelo de regressão linear múltipla (géneros + *spline* da duração + década + *spline* de log₁₀ votos) explica **R² = `r num(res$p1_r2, 3)`** da variância da nota. Para medir o peso de cada fator, retirou-se cada bloco de variáveis e mediu-se quanto R² o modelo perde:
+O modelo de regressão linear múltipla (géneros + *spline* da duração + década + *spline* de log₁₀ votos) explica **R² = `r num(res$p1_r2, 3)`** da variância da nota. Para medir o peso de cada fator, retirei cada bloco de variáveis e medi quanto R² o modelo perde:
 
 ```{r}
 #| label: tbl-p1
@@ -235,7 +235,7 @@ res$p4_top_conhecidos |>
 
 ## P5 — É possível prever se um filme terá nota ≥ 7?
 
-`r num(100 * res$p5_prop_bom, 1)` % dos filmes têm nota ≥ 7. Dividiram-se os dados em treino (80 %) e teste (20 %) e compararam-se dois modelos com um modelo de referência que prevê sempre "não":
+`r num(100 * res$p5_prop_bom, 1)` % dos filmes têm nota ≥ 7. Dividi os dados em treino (80 %) e teste (20 %) e comparei dois modelos com um modelo de referência que prevê sempre "não":
 
 ```{r}
 #| label: tbl-p5
@@ -276,7 +276,7 @@ m5 |> kable(digits = 3, col.names = c("Modelo", "AUC", "Accuracy", "Sensibilidad
 
 # Limitações e trabalho futuro
 
-**Dificuldades encontradas:** o volume dos ficheiros (≈ 13 milhões de linhas) obrigou a ler só as colunas necessárias e a filtrar logo na importação. As aspas não balanceadas nos títulos partiam a leitura até se desligar o `quote`. E os coeficientes de variáveis lógicas no R (`g_DramaTRUE`) exigiram cuidado ao extrair resultados.
+**Dificuldades encontradas:** o volume dos ficheiros (≈ 13 milhões de linhas) obrigou-me a ler só as colunas necessárias e a filtrar logo na importação. As aspas não balanceadas nos títulos partiam a leitura até eu desligar o `quote`. E os coeficientes de variáveis lógicas no R (`g_DramaTRUE`) exigiram-me cuidado ao extrair resultados.
 
 **Trabalho futuro:**
 
@@ -285,10 +285,6 @@ m5 |> kable(digits = 3, col.names = c("Modelo", "AUC", "Accuracy", "Sensibilidad
 * **Sensibilidade ao limiar de votos:** repetir a análise com 1 000 e 10 000 votos;
 * **Mais variáveis:** país e língua de origem (`title.akas`), elenco (`title.principals`) e orçamento;
 * **Aplicação:** uma "nota ajustada" que corrija o efeito do género e da época, para comparações mais justas num sistema de recomendação.
-
-# Uso de inteligência artificial {.unnumbered}
-
-De acordo com as regras da unidade curricular, declara-se que foi usado um assistente de IA (Claude) como auxiliar na estruturação do código R, na revisão de texto e na sugestão de visualizações. A definição do problema, as decisões de análise e a interpretação dos resultados são da responsabilidade do autor, que as defende presencialmente sem recurso a IA. O histórico de *commits* no repositório documenta a evolução do trabalho.
 
 # Anexos {.unnumbered}
 

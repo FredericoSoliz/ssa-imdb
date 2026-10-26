@@ -159,7 +159,7 @@ guardar_fig(g_diag, "03_p1_diagnostico", altura = 4)
 
 ## P2 — Os filmes antigos são melhores ou é viés de sobrevivência?
 
-Comparamos o efeito da década em três especificações:
+Comparo o efeito da década em três especificações:
 
 1. **Bruto:** `nota ~ década`, sem controlos.
 2. **Controlado:** o modelo P1 completo (género, duração, votos).
@@ -221,7 +221,7 @@ kable(canone_medias, digits = 2, format.args = list(big.mark = " "),
 
 ## P3 — A relação entre popularidade e nota é igual em todos os géneros?
 
-Ajustamos o modelo de P1 com a interação `log_votos × género` e comparamos com o modelo sem interação (teste F). Para visualizar, estimamos o declive da nota em função de log₁₀(votos) dentro de cada género (controlando duração e década).
+Ajusto o modelo de P1 com a interação `log_votos × género` e comparo-o com o modelo sem interação (teste F). Para visualizar, estimo o declive da nota em função de log₁₀(votos) dentro de cada género (controlando duração e década).
 
 ```{r}
 #| label: p3
@@ -275,7 +275,7 @@ guardar_fig(g_p3_fac, "03_p3_facetas", largura = 10, altura = 3.8)
 **Modelo linear misto** com intercepto aleatório por realizador, restrito a realizadores com pelo menos 3 filmes na amostra (com 1 ou 2 filmes não é possível separar o "estilo" do realizador do acaso).
 
 * O **ICC** (coeficiente de correlação intraclasse) mede a proporção da variância da nota que se deve a diferenças **entre** realizadores.
-* Calcula-se primeiro sem preditores (modelo nulo) e depois controlando os fatores de P1, para perceber quanto do "efeito realizador" vai além de ele fazer certos géneros ou filmes mais longos.
+* Calculo-o primeiro sem preditores (modelo nulo) e depois controlando os fatores de P1, para perceber quanto do "efeito realizador" vai além de ele fazer certos géneros ou filmes mais longos.
 
 ```{r}
 #| label: p4
@@ -346,7 +346,7 @@ guardar_fig(g_p4, "03_p4_realizadores", altura = 4)
 
 ## P5 — É possível prever se um filme terá nota ≥ 7?
 
-Uma nota ≥ 7 é um limiar prático ("vale a pena ver"). Comparamos:
+Uma nota ≥ 7 é um limiar prático ("vale a pena ver"). Comparo:
 
 * **Regressão logística:** modelo interpretável, com as mesmas variáveis e *splines* de P1;
 * ***Random forest*** (`ranger`, 300 árvores): capta interações e não linearidades automaticamente.
