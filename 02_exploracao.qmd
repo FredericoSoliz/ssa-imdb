@@ -1,0 +1,236 @@
+---
+title: "02 · Análise exploratória (EDA)"
+subtitle: "Avaliações no IMDb: fatores e enviesamentos"
+author: "Frederico Soliz"
+date: today
+format:
+  html:
+    toc: true
+    code-fold: show
+    embed-resources: true
+---
+
+Parte do conjunto limpo criado em `01_preparacao.qmd`. O objetivo é conhecer as distribuições, detetar relações entre variáveis e preparar a estratégia de modelação.
+
+```{r}
+#| label: setup
+library(dplyr)
+library(tidyr)
+library(knitr)
+library(patchwork)
+source("R/tema.R")
+
+filmes  <- readRDS("data/processed/filmes.rds")
+generos <- readRDS("data/processed/filmes_generos.rds")
+meta    <- readRDS("resultados/meta.rds")
+catalogo_decada <- readRDS("resultados/catalogo_decada.rds")
+```
+
+## 1. Estatística descritiva
+
+```{r}
+#| label: descritiva
+assimetria <- function(x) mean((x - mean(x))^3) / sd(x)^3
+
+descritiva <- filmes |>
+  select(nota, votos, log_votos, duracao, ano, n_generos) |>
+  pivot_longer(everything(), names_to = "variavel") |>
+  group_by(variavel) |>
+  summarise(n = n(), media = mean(value), dp = sd(value), min = min(value),
+            q1 = quantile(value, .25), mediana = median(value),
+            q3 = quantile(value, .75), max = max(value),
+            assimetria = assimetria(value)) |>
+  arrange(match(variavel, c("nota", "votos", "log_votos", "duracao", "ano", "n_generos")))
+
+saveRDS(descritiva, "resultados/descritiva.rds")
+kable(descritiva, digits = 2, format.args = list(big.mark = " "))
+```
+
+```{r}
+#| label: correlacoes
+correlacoes <- filmes |>
+  select(nota, log_votos, duracao, ano, n_generos) |>
+  cor(method = "spearman")
+saveRDS(correlacoes, "resultados/correlacoes.rds")
+kable(correlacoes, digits = 2, caption = "Correlações de Spearman (robustas a assimetria e outliers)")
+```
+
+## 2. Distribuição da nota
+
+```{r}
+#| label: fig-nota
+#| fig-cap: "Distribuição da nota média"
+media_nota <- mean(filmes$nota)
+g_nota <- ggplot(filmes, aes(nota)) +
+  geom_histogram(binwidth = 0.1, fill = cor_principal, colour = "#fcfcfb", linewidth = 0.1) +
+  geom_vline(xintercept = media_nota, colour = cor_destaque, linewidth = 0.8, linetype = "dashed") +
+  annotate("text", x = media_nota - 0.15, y = Inf, vjust = 1.5, hjust = 1,
+           label = sprintf("média = %.2f", media_nota), colour = "#52514e") +
+  scale_x_continuous(breaks = 1:10) +
+  scale_y_continuous(labels = scales::label_number(big.mark = " ")) +
+  labs(title = "A maioria dos filmes tem nota entre 5 e 7",
+       subtitle = "Distribuição da nota média no IMDb (filmes com ≥ 100 votos)",
+       x = "Nota média (1–10)", y = "Número de filmes", caption = fonte_imdb)
+guardar_fig(g_nota, "02_distribuicao_nota")
+```
+
+A distribuição tem **assimetria negativa** (cauda para as notas baixas): poucos filmes ficam abaixo de 4, mas os que ficam vão até 1. Para uma regressão linear isto não é um problema grave, porque o pressuposto de normalidade é sobre os resíduos e não sobre a variável resposta, e com mais de 100 mil observações os testes são robustos. Será verificado nos resíduos.
+
+## 3. Popularidade: número de votos
+
+```{r}
+#| label: fig-votos
+g_votos_lin <- ggplot(filmes, aes(votos)) +
+  geom_histogram(bins = 60, fill = cor_neutra) +
+  scale_x_continuous(labels = scales::label_number(scale_cut = scales::cut_short_scale())) +
+  scale_y_continuous(labels = scales::label_number(big.mark = " ")) +
+  labs(subtitle = "Escala linear", x = "Votos", y = "Filmes")
+g_votos_log <- ggplot(filmes, aes(votos)) +
+  geom_histogram(bins = 60, fill = cor_principal) +
+  scale_x_log10(labels = scales::label_number(scale_cut = scales::cut_short_scale())) +
+  scale_y_continuous(labels = scales::label_number(big.mark = " ")) +
+  labs(subtitle = "Escala logarítmica", x = "Votos (log10)", y = NULL)
+
+g_votos <- (g_votos_lin | g_votos_log) +
+  plot_annotation(title = "Poucos filmes concentram quase todos os votos",
+                  subtitle = "Por isso a popularidade entra nos modelos como log10(votos)",
+                  caption = fonte_imdb)
+guardar_fig(g_votos, "02_distribuicao_votos", altura = 4)
+```
+
+A distribuição dos votos é extremamente enviesada: a mediana é de `r format(median(filmes$votos), big.mark = " ")` votos e o máximo ultrapassa `r format(round(max(filmes$votos) / 1e6, 1))` milhões. Na escala logarítmica fica aproximadamente simétrica, o que justifica usar `log_votos` nos modelos. Os `r format(round(max(filmes$votos)/1e6,1))` milhões não são removidos como *outlier*: são filmes reais e muito populares, e é precisamente esse fenómeno que queremos estudar.
+
+## 4. Nota e época
+
+```{r}
+#| label: fig-decada
+por_decada <- filmes |>
+  group_by(decada) |>
+  summarise(n = n(), media = mean(nota), ic = 1.96 * sd(nota) / sqrt(n),
+            mediana_votos = median(votos)) |>
+  left_join(catalogo_decada, by = "decada") |>
+  mutate(prop_visivel = n / n_catalogo)
+saveRDS(por_decada, "resultados/por_decada.rds")
+
+g_dec_nota <- ggplot(por_decada, aes(decada, media)) +
+  geom_line(colour = cor_principal, linewidth = 0.8) +
+  geom_pointrange(aes(ymin = media - ic, ymax = media + ic), colour = cor_principal, size = 0.4) +
+  scale_x_continuous(breaks = seq(1920, 2020, 10), labels = function(x) paste0(x, "s")) +
+  labs(subtitle = "Nota média por década (IC 95 %)", x = NULL, y = "Nota média")
+
+g_dec_n <- ggplot(por_decada, aes(decada, n)) +
+  geom_col(fill = cor_destaque, width = 7) +
+  scale_x_continuous(breaks = seq(1920, 2020, 10), labels = function(x) paste0(x, "s")) +
+  scale_y_continuous(labels = scales::label_number(big.mark = " ")) +
+  labs(subtitle = "Número de filmes na amostra (≥ 100 votos)", x = "Década de estreia", y = NULL)
+
+g_decada <- (g_dec_nota / g_dec_n) +
+  plot_annotation(title = "A nota média cai década após década, enquanto o número de filmes explode",
+                  caption = fonte_imdb)
+guardar_fig(g_decada, "02_nota_decada", altura = 6.5)
+```
+
+A nota média desce de forma quase contínua, de `r round(por_decada$media[1], 2)` nos anos 20 para `r round(tail(por_decada$media, 1), 2)` nos anos 2020. Em simultâneo, o número de filmes avaliados por década multiplica-se por mais de 40. A proporção de filmes catalogados que chega aos 100 votos é semelhante entre décadas (≈ 20–28 %, exceto nos anos 20 com `r scales::percent(por_decada$prop_visivel[1], 0.1)`), por isso o filtro de votos não explica sozinho a diferença.
+
+A hipótese do **viés de sobrevivência** (P2) é que o próprio catálogo de filmes antigos já é uma seleção: o que foi preservado, restaurado e continua a ser lembrado. Já as décadas recentes incluem tudo o que se produz. Se assim for, a diferença deve vir sobretudo da **cauda inferior** (há mais filmes medíocres recentes avaliados) e não do topo.
+
+```{r}
+#| label: fig-quantis-decada
+quantis_decada <- filmes |>
+  group_by(decada) |>
+  summarise(`Percentil 10` = quantile(nota, .10), `Mediana` = median(nota),
+            `Percentil 90` = quantile(nota, .90)) |>
+  pivot_longer(-decada, names_to = "quantil", values_to = "nota") |>
+  mutate(quantil = factor(quantil, levels = c("Percentil 90", "Mediana", "Percentil 10")))
+saveRDS(quantis_decada, "resultados/quantis_decada.rds")
+
+g_quantis <- ggplot(quantis_decada, aes(decada, nota, colour = quantil)) +
+  geom_line(linewidth = 0.8) +
+  geom_point(size = 2.2) +
+  geom_text(data = quantis_decada |> filter(decada == 2020),
+            aes(label = quantil), hjust = -0.15, size = 3.3, show.legend = FALSE) +
+  scale_colour_manual(values = unname(cores[c("azul", "aqua", "laranja")])) +
+  scale_x_continuous(breaks = seq(1920, 2020, 10), labels = function(x) paste0(x, "s"),
+                     expand = expansion(mult = c(0.03, 0.15))) +
+  labs(title = "A descida concentra-se nos filmes mais fracos",
+       subtitle = "Percentis da nota por década",
+       x = "Década de estreia", y = "Nota", colour = NULL, caption = fonte_imdb)
+guardar_fig(g_quantis, "02_quantis_decada", altura = 4.5)
+```
+
+O percentil 90 (os melhores filmes de cada década) quase não se mexe, enquanto o percentil 10 cai bastante. **Os melhores filmes de hoje são avaliados como os melhores de antigamente; o que mudou foi a quantidade de filmes fracos que entram na amostra.** Este padrão é consistente com o viés de sobrevivência e é testado formalmente na P2.
+
+## 5. Nota por género
+
+```{r}
+#| label: fig-generos
+por_genero <- generos |>
+  group_by(genero) |>
+  summarise(n = n(), media = mean(nota), mediana = median(nota),
+            q1 = quantile(nota, .25), q3 = quantile(nota, .75)) |>
+  arrange(media)
+saveRDS(por_genero, "resultados/por_genero.rds")
+
+g_generos <- generos |>
+  mutate(genero = factor(genero, levels = por_genero$genero)) |>
+  ggplot(aes(nota, genero)) +
+  geom_boxplot(fill = "#cde2fb", colour = cor_principal, outlier.shape = NA,
+               width = 0.6, linewidth = 0.35) +
+  geom_point(data = por_genero |> mutate(genero = factor(genero, levels = genero)),
+             aes(x = media), colour = cor_destaque, size = 2) +
+  coord_cartesian(xlim = c(2, 9.5)) +
+  labs(title = "Documentários e biografias destacam-se; terror fica no fundo",
+       subtitle = "Distribuição da nota por género (caixa = 50 % centrais, ponto laranja = média)",
+       x = "Nota média (1–10)", y = NULL,
+       caption = paste(fonte_imdb, "· Um filme pode contar em até 3 géneros"))
+guardar_fig(g_generos, "02_nota_genero", altura = 6.5)
+```
+
+O género separa claramente as notas: a diferença entre o género mais bem avaliado e o pior é de cerca de `r round(max(por_genero$media) - min(por_genero$media), 1)` pontos, maior do que qualquer diferença entre décadas. Como um filme pode ter até 3 géneros, este gráfico conta o mesmo filme várias vezes. Nos modelos usam-se variáveis binárias, para isolar o efeito de cada género mantendo os outros constantes.
+
+## 6. Duração e popularidade vs. nota
+
+```{r}
+#| label: fig-relacoes
+escala_densidade <- scale_fill_gradient(
+  low = "#cde2fb", high = "#104281", trans = "log10", limits = c(1, 3000),
+  oob = scales::squish, labels = scales::label_number(big.mark = " "))
+
+g_dur <- ggplot(filmes, aes(duracao, nota)) +
+  geom_bin_2d(bins = 70) +
+  geom_smooth(method = "gam", colour = cor_destaque, linewidth = 0.9, se = FALSE) +
+  escala_densidade +
+  labs(subtitle = "Duração", x = "Duração (min)", y = "Nota média", fill = "Filmes")
+
+g_pop <- ggplot(filmes, aes(votos, nota)) +
+  geom_bin_2d(bins = 70) +
+  geom_smooth(method = "gam", colour = cor_destaque, linewidth = 0.9, se = FALSE) +
+  scale_x_log10(labels = scales::label_number(scale_cut = scales::cut_short_scale())) +
+  escala_densidade +
+  labs(subtitle = "Popularidade", x = "Votos (escala log)", y = NULL, fill = "Filmes")
+
+g_relacoes <- (g_dur | g_pop) +
+  plot_layout(guides = "collect") +
+  plot_annotation(title = "Filmes mais longos e mais votados tendem a ter nota mais alta",
+                  subtitle = "Densidade de filmes; linha = tendência suavizada (GAM)",
+                  caption = fonte_imdb) &
+  theme(legend.position = "right")
+guardar_fig(g_relacoes, "02_duracao_votos_nota", altura = 4.5)
+```
+
+Ambas as relações são **não lineares**:
+
+* **Duração:** a curva tem um mínimo por volta dos 80–90 minutos (o formato típico de comédia e terror de baixo orçamento) e sobe a partir daí até estabilizar perto das 3 horas. Os filmes curtos (40–60 min) também têm boas notas, mas são sobretudo documentários.
+* **Votos:** a nota é praticamente plana até ~10 mil votos e depois sobe de forma acentuada. Filmes com poucos votos têm notas muito dispersas (a média de poucos votos é instável). Popularidade e qualidade percebida estão associadas, mas a direção causal é ambígua: os filmes bons atraem votos, ou os votos vêm de um público mais entusiasta?
+
+## 7. Estratégia de modelação
+
+| Pergunta | Abordagem | Porquê |
+|---|---|---|
+| **P1** Que fatores explicam a nota? | Regressão linear múltipla: nota ~ géneros (0/1) + duração + década + log₁₀(votos) | Coeficientes interpretáveis em "pontos de nota", controlando os restantes fatores; o R² mede quanto fica por explicar |
+| **P2** Os filmes antigos são melhores ou é viés de sobrevivência? | Comparar o efeito da década (i) em bruto, (ii) controlando a popularidade e (iii) só entre os filmes mais votados de cada década | Se a vantagem desaparecer quando se comparam filmes com visibilidade semelhante, a explicação é seleção e não qualidade |
+| **P3** A relação votos–nota é igual em todos os géneros? | Regressão com interação log₁₀(votos) × género; declive por género com IC 95 % | A interação testa formalmente se os declives diferem |
+| **P4** Quanto da nota se deve ao realizador? | Modelo linear misto com efeito aleatório do realizador (`lme4`), ICC | Separa a variação entre realizadores da variação entre filmes do mesmo realizador |
+| **P5** É possível prever se um filme terá nota ≥ 7? | Regressão logística vs. *random forest*, divisão treino/teste 80/20, AUC e *accuracy* | Compara um modelo interpretável com um flexível usando métricas fora da amostra |
+
+Em todos os modelos, a duração e o log dos votos entram com termos polinomiais (ou *splines*) para captar as curvaturas vistas na secção 6.
