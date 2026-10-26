@@ -12,3 +12,6 @@ data/
 *.rmarkdown
 
 **/*.quarto_ipynb
+
+# Configuração local do Claude Code
+.claude/

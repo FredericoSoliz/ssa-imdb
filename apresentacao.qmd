@@ -1,0 +1,223 @@
+---
+title: "Avaliações no IMDb: fatores e enviesamentos"
+subtitle: "Seminário de Sistemas e Aplicações — MEI, UFP"
+author: "Frederico Soliz · 2022125511@ufp.edu.pt"
+date: today
+date-format: "D [de] MMMM [de] YYYY"
+format:
+  revealjs:
+    theme: default
+    slide-number: true
+    embed-resources: true
+    width: 1280
+    height: 720
+    css: R/slides.css
+execute:
+  echo: false
+---
+
+```{r}
+#| include: false
+library(dplyr)
+library(knitr)
+num <- function(x, d = 2) formatC(x, format = "f", digits = d, decimal.mark = ",")
+fmt <- function(x) format(round(x), big.mark = " ")
+funil <- readRDS("resultados/funil.rds")
+meta  <- readRDS("resultados/meta.rds")
+res   <- readRDS("resultados/modelos.rds")
+m5    <- res$p5_metricas
+```
+
+## A pergunta de partida
+
+::: {.columns}
+::: {.column width="55%"}
+* O IMDb é a minha referência para escolher o que ver.
+* Mas um **8 num filme de terror** vale o mesmo que um **8 num drama**?
+* E os clássicos são mesmo melhores, ou só nos lembramos dos bons?
+:::
+::: {.column width="45%"}
+::: {.destaque}
+A nota de um filme reflete a sua **qualidade**, ou depende do **género**, da **duração**, da **época** e da **popularidade**?
+:::
+:::
+:::
+
+## Os dados: IMDb Non-Commercial Datasets
+
+::: {.columns}
+::: {.column width="50%"}
+* 4 ficheiros TSV públicos, juntos por `tconst` / `nconst`
+  * `title.basics` · `title.ratings` · `title.crew` · `name.basics`
+* Descarregados **pelo próprio código**, com *snapshot* de `r format(meta$data_snapshot, "%d/%m/%Y")`
+* Licença não comercial → no Git fica o código, não os dados
+:::
+::: {.column width="50%"}
+::: {.numero}
+`r fmt(funil$n[1])`
+:::
+::: {.legenda}
+títulos no ficheiro original
+:::
+::: {.numero .azul}
+`r fmt(tail(funil$n, 1))`
+:::
+::: {.legenda}
+longas-metragens após limpeza
+:::
+:::
+:::
+
+## Preparação: cada corte tem uma razão
+
+| Problema nos dados | Decisão | Porquê |
+|---|---|---|
+| Episódios, curtas, vídeos | só `movie`, sem adultos | outra população, outros votantes |
+| Médias de 3 ou 10 votos | **≥ 100 votos** | erro-padrão da média ≈ 0,2 pontos |
+| `\N` na duração/géneros | remover | após o filtro só falta ≈ 1 % |
+| Durações de 1 a 51 420 min | **40–300 min** | definição de longa-metragem (AMPAS/BFI) |
+| `"Comedy,Drama,Romance"` | 21 variáveis 0/1 | ordem alfabética ≠ género principal |
+| Votos muito assimétricos | `log10(votos)` | assimetria 18,8 → distribuição quase simétrica |
+
+## Cinco perguntas
+
+1. **Fatores:** que fatores explicam a nota, e com que peso? *(regressão linear múltipla)*
+2. **Sobrevivência:** os filmes antigos são melhores ou é viés de sobrevivência? *(3 especificações)*
+3. **Popularidade × género:** a relação votos–nota é igual em todos os géneros? *(interação + teste F)*
+4. **Realizador:** quanto da nota se deve a quem realizou? *(modelo misto, ICC)*
+5. **Previsão:** dá para prever se um filme terá nota ≥ 7? *(logística vs. random forest)*
+
+## O género separa muito as notas
+
+![](figuras/02_nota_genero.png){fig-align="center" height="600"}
+
+## Uma pista: o topo não mudou em 100 anos
+
+![](figuras/02_quantis_decada.png){fig-align="center" height="520"}
+
+::: {.nota-rodape}
+Os melhores filmes de cada época têm a mesma nota (P90 ≈ 7,3). O que cai é a **cauda de baixo**.
+:::
+
+## P1 · O género é o fator dominante
+
+::: {.columns}
+::: {.column width="62%"}
+![](figuras/03_p1_efeito_generos.png){height="560"}
+:::
+::: {.column width="38%"}
+**R² = `r num(res$p1_r2, 2)`**
+
+Perda de R² sem cada bloco:
+
+```{r}
+res$p1_importancia |>
+  transmute(Bloco = bloco, `ΔR²` = paste0(num(100 * delta_r2, 1), " p.p.")) |> kable()
+```
+
+`r num(100 * (1 - res$p1_r2), 0)` % **fica por explicar**, e aí cabe a "qualidade" que os dados não medem.
+:::
+:::
+
+## P2 · Os clássicos eram melhores?
+
+![](figuras/03_p2_decadas.png){fig-align="center" height="520"}
+
+::: {.nota-rodape}
+Entre os **500 mais votados de cada década**, a vantagem dos antigos **desaparece** → **viés de sobrevivência**.
+:::
+
+## P3 · A popularidade "vale" mais nuns géneros
+
+::: {.columns}
+::: {.column width="58%"}
+![](figuras/03_p3_declives.png){height="560"}
+:::
+::: {.column width="42%"}
+Interação votos × género: **F = `r num(res$p3_teste$statistic[2], 1)`, p < 0,001**
+
+* **Western, terror, ficção científica:** muitos filmes baratos e mal avaliados; os que chegam ao grande público são os bons.
+* **Música, documentário:** um público de nicho e interessado dá notas altas mesmo com poucos votos.
+:::
+:::
+
+## P4 · O realizador pesa mais do que tudo o resto
+
+::: {.columns}
+::: {.column width="45%"}
+::: {.numero .azul}
+`r num(100 * res$p4$icc_controlado, 0)` %
+:::
+::: {.legenda}
+da variância da nota está **entre realizadores**, mesmo depois de controlar género, duração, década e votos (ICC)
+:::
+
+`r fmt(res$p4$n_filmes)` filmes · `r fmt(res$p4$n_realizadores)` realizadores (≥ 3 filmes)
+:::
+::: {.column width="55%"}
+```{r}
+res$p4_top_conhecidos |> head(8) |>
+  transmute(Realizador = realizador, Filmes = realizador_n_filmes,
+            `Efeito (pontos)` = paste0("+", num(efeito))) |> kable()
+```
+::: {.pequeno}
+O topo absoluto é de realizadores de nicho com poucas centenas de votos, o que pode indicar votação organizada.
+:::
+:::
+:::
+
+## P5 · Prever um filme "bom" (nota ≥ 7)
+
+![](figuras/03_p5_roc_importancia.png){fig-align="center" height="430"}
+
+```{r}
+m5 |> transmute(Modelo = modelo, AUC = num(auc, 3), Accuracy = num(accuracy, 3),
+                Sensibilidade = num(sensibilidade, 2)) |> kable()
+```
+
+## Conclusões
+
+| | Resposta |
+|---|---|
+| **P1** | O **género** domina (Documentary +1,5, Horror −0,9); 62 % da nota fica por explicar |
+| **P2** | **Viés de sobrevivência:** no cânone de cada década, os antigos não são melhores |
+| **P3** | O peso da popularidade **varia ~10×** entre géneros |
+| **P4** | O **realizador** explica ~50 % da variância |
+| **P5** | Previsão razoável (AUC ≈ `r num(m5$auc[3], 2)`), mas falha metade dos filmes bons |
+
+::: {.destaque}
+A nota do IMDb é útil, mas **não é comparável entre géneros nem entre épocas**.
+:::
+
+## Limitações e trabalho futuro
+
+::: {.columns}
+::: {.column width="50%"}
+**Limitações**
+
+* Quem vota no IMDb ≠ público em geral
+* Possível manipulação de votos em nichos
+* Associação, não causalidade
+* *Snapshot*: a década de 2020 ainda está a mudar
+* Limiar de 100 votos é uma escolha
+:::
+::: {.column width="50%"}
+**Trabalho futuro**
+
+* Crítica vs. público (motivação original)
+* Validação temporal (treinar ≤ 2015)
+* Sensibilidade ao limiar de votos
+* País/língua (`title.akas`), elenco
+* "Nota ajustada" por género e época
+:::
+:::
+
+## Obrigado {.center}
+
+**Repositório:** <https://github.com/FredericoSoliz/ssa-imdb>
+
+Relatório reprodutível: `quarto render` na raiz do projeto
+
+::: {.pequeno}
+R · Quarto · data.table · dplyr · ggplot2 · lme4 · ranger · pROC
+:::
