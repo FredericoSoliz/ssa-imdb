@@ -1,0 +1,442 @@
+---
+title: "03 · Modelação e resposta às perguntas"
+subtitle: "Avaliações no IMDb: fatores e enviesamentos"
+author: "Frederico Soliz"
+date: today
+format:
+  html:
+    toc: true
+    code-fold: show
+    embed-resources: true
+---
+
+Aplica a estratégia definida em `02_exploracao.qmd` às cinco perguntas de investigação. Os resultados principais ficam em `resultados/modelos.rds` e as figuras em `figuras/`, para serem reutilizados no relatório e na apresentação.
+
+```{r}
+#| label: setup
+library(dplyr)
+library(tidyr)
+library(broom)
+library(knitr)
+library(splines)
+library(lme4)
+library(ranger)
+library(pROC)
+library(patchwork)
+source("R/tema.R")
+
+filmes <- readRDS("data/processed/filmes.rds")
+meta   <- readRDS("resultados/meta.rds")
+generos_modelo <- meta$generos_modelo
+cols_genero    <- paste0("g_", generos_modelo)
+
+# Nomes de colunas com hífen (g_Sci-Fi) precisam de crases nas fórmulas
+termos_genero <- paste0("`", cols_genero, "`")
+
+filmes <- filmes |>
+  mutate(decada_f = relevel(factor(decada), ref = "2010"))  # referência: década com mais filmes
+
+resultados <- list()
+```
+
+## P1 — Que fatores explicam a nota de um filme?
+
+**Modelo:** regressão linear múltipla.
+
+$$\text{nota} = \beta_0 + \sum_g \beta_g \,\text{género}_g + f_1(\text{duração}) + \text{década} + f_2(\log_{10}\text{votos}) + \varepsilon$$
+
+* Os géneros entram como 21 variáveis binárias (um filme pode ter vários).
+* A duração e os votos entram com *splines* naturais de 4 graus de liberdade, porque a EDA mostrou relações curvas. Uma reta iria subestimar o efeito.
+* A década entra como fator (referência: 2010s), sem impor tendência linear.
+
+```{r}
+#| label: p1-modelo
+formula_p1 <- as.formula(paste(
+  "nota ~", paste(termos_genero, collapse = " + "),
+  "+ ns(duracao, 4) + decada_f + ns(log_votos, 4)"))
+
+m_p1 <- lm(formula_p1, data = filmes)
+glance(m_p1) |> select(r.squared, adj.r.squared, sigma, nobs) |> kable(digits = 3)
+```
+
+### Importância relativa: quanto R² perde o modelo sem cada bloco?
+
+```{r}
+#| label: p1-importancia
+r2_completo <- summary(m_p1)$r.squared
+blocos <- list(
+  `Géneros`    = termos_genero,
+  `Duração`    = "ns(duracao, 4)",
+  `Década`     = "decada_f",
+  `Popularidade (votos)` = "ns(log_votos, 4)"
+)
+todos_termos <- unlist(blocos)
+
+importancia <- tibble(bloco = names(blocos)) |>
+  mutate(r2_sem = sapply(blocos, function(t) {
+    f <- reformulate(setdiff(todos_termos, t), response = "nota")
+    summary(lm(f, data = filmes))$r.squared
+  }),
+  delta_r2 = r2_completo - r2_sem) |>
+  arrange(desc(delta_r2))
+
+resultados$p1_r2 <- r2_completo
+resultados$p1_importancia <- importancia
+kable(importancia, digits = 4, col.names = c("Bloco", "R² sem o bloco", "Perda de R²"))
+```
+
+```{r}
+#| label: p1-generos
+coef_generos <- tidy(m_p1, conf.int = TRUE) |>
+  # variáveis lógicas aparecem como `g_Drama`TRUE nos coeficientes
+  filter(grepl("^`?g_.*TRUE$", term)) |>
+  mutate(genero = gsub("^g_|TRUE$", "", gsub("`", "", term))) |>
+  arrange(estimate)
+resultados$p1_generos <- coef_generos
+
+g_p1 <- ggplot(coef_generos, aes(estimate, reorder(genero, estimate))) +
+  geom_vline(xintercept = 0, colour = "#c3c2b7") +
+  geom_pointrange(aes(xmin = conf.low, xmax = conf.high,
+                      colour = estimate > 0), size = 0.35, show.legend = FALSE) +
+  scale_colour_manual(values = c(`TRUE` = cor_principal, `FALSE` = cor_destaque)) +
+  labs(title = "Efeito de cada género na nota, mantendo o resto constante",
+       subtitle = "Coeficientes da regressão (pontos de nota) com IC 95 %",
+       x = "Diferença na nota face a um filme sem esse género", y = NULL,
+       caption = paste(fonte_imdb, "· Controlado por duração, década e votos"))
+guardar_fig(g_p1, "03_p1_efeito_generos", altura = 6)
+```
+
+```{r}
+#| label: p1-curvas
+# Efeito marginal da duração e dos votos: previsões variando uma variável e
+# mantendo as restantes num filme "típico" (Drama, década de 2010, valores medianos)
+base <- filmes |>
+  summarise(duracao = median(duracao), log_votos = median(log_votos)) |>
+  mutate(decada_f = factor("2010", levels = levels(filmes$decada_f)))
+for (g in cols_genero) base[[g]] <- g == "g_Drama"
+
+pred_dur <- base |> select(-duracao) |>
+  cross_join(tibble(duracao = seq(45, 240, 5)))
+pred_dur <- bind_cols(pred_dur, as_tibble(predict(m_p1, pred_dur, interval = "confidence")))
+
+pred_vot <- base |> select(-log_votos) |>
+  cross_join(tibble(log_votos = seq(2, 6.3, 0.05)))
+pred_vot <- bind_cols(pred_vot, as_tibble(predict(m_p1, pred_vot, interval = "confidence")))
+
+curva <- function(d, x, rotulo, escala_x = scale_x_continuous()) {
+  ggplot(d, aes({{ x }}, fit)) +
+    geom_ribbon(aes(ymin = lwr, ymax = upr), fill = "#cde2fb") +
+    geom_line(colour = cor_principal, linewidth = 1) +
+    escala_x + labs(x = rotulo, y = "Nota prevista")
+}
+g_p1_curvas <- (curva(pred_dur, duracao, "Duração (min)") |
+  curva(pred_vot, 10^log_votos, "Votos (escala log)",
+        scale_x_log10(labels = scales::label_number(scale_cut = scales::cut_short_scale())))) +
+  plot_annotation(title = "Efeito isolado da duração e da popularidade",
+                  subtitle = "Nota prevista para um drama típico dos anos 2010 (IC 95 %)",
+                  caption = fonte_imdb)
+guardar_fig(g_p1_curvas, "03_p1_curvas", altura = 4)
+resultados$p1_pred_votos <- pred_vot |> select(log_votos, fit)
+```
+
+```{r}
+#| label: p1-diagnostico
+set.seed(2026)
+amostra_res <- tibble(ajustado = fitted(m_p1), residuo = resid(m_p1)) |> slice_sample(n = 20000)
+g_res <- ggplot(amostra_res, aes(ajustado, residuo)) +
+  geom_point(alpha = 0.08, size = 0.6, colour = cor_principal) +
+  geom_hline(yintercept = 0, colour = cor_destaque) +
+  labs(subtitle = "Resíduos vs. ajustados", x = "Nota ajustada", y = "Resíduo")
+g_qq <- ggplot(amostra_res, aes(sample = residuo)) +
+  stat_qq(alpha = 0.1, size = 0.6, colour = cor_principal) +
+  stat_qq_line(colour = cor_destaque) +
+  labs(subtitle = "QQ-plot dos resíduos", x = "Quantis teóricos", y = "Quantis observados")
+g_diag <- (g_res | g_qq) + plot_annotation(title = "Diagnóstico do modelo P1 (amostra de 20 000 filmes)")
+guardar_fig(g_diag, "03_p1_diagnostico", altura = 4)
+```
+
+**Diagnóstico:** os resíduos estão centrados em zero, sem padrão forte face aos valores ajustados, mas a cauda esquerda é mais pesada do que a normal. Há filmes com notas muito abaixo do previsto, coerente com a assimetria negativa da nota (*flops* e possíveis campanhas de votos negativos). Com n > 140 mil, os intervalos de confiança dos coeficientes continuam fiáveis (Teorema do Limite Central), mas os intervalos de **previsão** individuais seriam otimistas na cauda baixa.
+
+## P2 — Os filmes antigos são melhores ou é viés de sobrevivência?
+
+Comparamos o efeito da década em três especificações:
+
+1. **Bruto:** `nota ~ década`, sem controlos.
+2. **Controlado:** o modelo P1 completo (género, duração, votos).
+3. **Cânone:** apenas os 500 filmes **mais votados de cada década**. Estes conjuntos têm a mesma dimensão e são equivalentes em "visibilidade" (os filmes que cada época deixou na memória do público).
+
+Se os filmes antigos fossem intrinsecamente melhores, a vantagem deveria manter-se no cânone. Se for seleção, deve desaparecer.
+
+```{r}
+#| label: p2
+m_bruto <- lm(nota ~ decada_f, data = filmes)
+
+canone <- filmes |> group_by(decada) |> slice_max(votos, n = 500, with_ties = FALSE) |> ungroup()
+m_canone <- lm(nota ~ decada_f, data = canone)
+
+extrair_decadas <- function(modelo, nome) {
+  tidy(modelo, conf.int = TRUE) |>
+    filter(grepl("^decada_f", term)) |>
+    transmute(decada = as.integer(sub("decada_f", "", term)), estimate, conf.low, conf.high) |>
+    bind_rows(tibble(decada = 2010L, estimate = 0, conf.low = 0, conf.high = 0)) |>
+    mutate(modelo = nome)
+}
+
+p2 <- bind_rows(
+  extrair_decadas(m_bruto, "1. Bruto"),
+  extrair_decadas(m_p1, "2. Controlado (género, duração, votos)"),
+  extrair_decadas(m_canone, "3. Cânone (500 mais votados por década)")
+)
+resultados$p2 <- p2
+
+g_p2 <- ggplot(p2, aes(decada, estimate, colour = modelo)) +
+  geom_hline(yintercept = 0, colour = "#c3c2b7") +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high, fill = modelo), alpha = 0.15, colour = NA) +
+  geom_line(linewidth = 0.9) +
+  geom_point(size = 2) +
+  scale_colour_manual(values = unname(cores[c("laranja", "azul", "aqua")])) +
+  scale_fill_manual(values = unname(cores[c("laranja", "azul", "aqua")])) +
+  scale_x_continuous(breaks = seq(1920, 2020, 10), labels = function(x) paste0(x, "s")) +
+  guides(colour = guide_legend(ncol = 1), fill = guide_legend(ncol = 1)) +
+  labs(title = "A vantagem dos filmes antigos depende de quais filmes se comparam",
+       subtitle = "Diferença na nota face aos anos 2010 (IC 95 %), em três especificações",
+       x = "Década de estreia", y = "Diferença na nota (pontos)",
+       colour = NULL, fill = NULL, caption = fonte_imdb)
+guardar_fig(g_p2, "03_p2_decadas", altura = 5)
+
+p2 |> filter(decada %in% c(1920, 1950, 1980, 2020)) |>
+  select(modelo, decada, estimate) |>
+  pivot_wider(names_from = decada, values_from = estimate) |>
+  kable(digits = 2, caption = "Diferença na nota face aos anos 2010")
+```
+
+```{r}
+#| label: p2-canone-medias
+canone_medias <- canone |> group_by(decada) |>
+  summarise(nota_media = mean(nota), votos_min = min(votos))
+resultados$p2_canone <- canone_medias
+kable(canone_medias, digits = 2, format.args = list(big.mark = " "),
+      col.names = c("Década", "Nota média (cânone)", "Votos do 500.º filme"))
+```
+
+## P3 — A relação entre popularidade e nota é igual em todos os géneros?
+
+Ajustamos o modelo de P1 com a interação `log_votos × género` e comparamos com o modelo sem interação (teste F). Para visualizar, estimamos o declive da nota em função de log₁₀(votos) dentro de cada género (controlando duração e década).
+
+```{r}
+#| label: p3
+f_sem <- as.formula(paste("nota ~ log_votos +", paste(termos_genero, collapse = " + "),
+                          "+ ns(duracao, 4) + decada_f"))
+f_com <- as.formula(paste("nota ~ log_votos * (", paste(termos_genero, collapse = " + "),
+                          ") + ns(duracao, 4) + decada_f"))
+m_p3_sem <- lm(f_sem, data = filmes)
+m_p3_com <- lm(f_com, data = filmes)
+teste_p3 <- anova(m_p3_sem, m_p3_com)
+resultados$p3_teste <- tidy(teste_p3)
+teste_p3
+
+declives <- lapply(generos_modelo, function(g) {
+  d <- filmes[filmes[[paste0("g_", g)]], ]
+  m <- lm(nota ~ log_votos + ns(duracao, 4) + decada_f, data = d)
+  tidy(m, conf.int = TRUE) |> filter(term == "log_votos") |> mutate(genero = g, n = nrow(d))
+}) |> bind_rows() |> arrange(estimate)
+resultados$p3_declives <- declives
+
+g_p3 <- ggplot(declives, aes(estimate, reorder(genero, estimate))) +
+  geom_vline(xintercept = 0, colour = "#c3c2b7") +
+  geom_pointrange(aes(xmin = conf.low, xmax = conf.high), colour = cor_principal, size = 0.35) +
+  labs(title = "Popularidade \"vale\" mais pontos nuns géneros do que noutros",
+       subtitle = "Variação da nota quando os votos se multiplicam por 10 (IC 95 %)",
+       x = "Pontos de nota por cada ×10 votos", y = NULL,
+       caption = paste(fonte_imdb, "· Controlado por duração e década"))
+guardar_fig(g_p3, "03_p3_declives", altura = 6)
+```
+
+```{r}
+#| label: p3-facetas
+sel <- c(head(declives$genero, 2), tail(declives$genero, 2))
+dados_sel <- lapply(sel, function(g) filmes[filmes[[paste0("g_", g)]], ] |> mutate(genero = g)) |>
+  bind_rows() |> mutate(genero = factor(genero, levels = sel))
+
+g_p3_fac <- ggplot(dados_sel, aes(votos, nota)) +
+  geom_bin_2d(bins = 50) +
+  geom_smooth(method = "lm", colour = cor_destaque, linewidth = 0.9) +
+  scale_x_log10(labels = scales::label_number(scale_cut = scales::cut_short_scale())) +
+  scale_fill_gradient(low = "#cde2fb", high = "#104281", trans = "log10") +
+  facet_wrap(~genero, nrow = 1) +
+  labs(title = "Os dois géneros com menor e maior declive",
+       x = "Votos (escala log)", y = "Nota", fill = "Filmes", caption = fonte_imdb) +
+  theme(legend.position = "right")
+guardar_fig(g_p3_fac, "03_p3_facetas", largura = 10, altura = 3.8)
+```
+
+## P4 — Quanto da nota se deve ao realizador?
+
+**Modelo linear misto** com intercepto aleatório por realizador, restrito a realizadores com pelo menos 3 filmes na amostra (com 1 ou 2 filmes não é possível separar o "estilo" do realizador do acaso).
+
+* O **ICC** (coeficiente de correlação intraclasse) mede a proporção da variância da nota que se deve a diferenças **entre** realizadores.
+* Calcula-se primeiro sem preditores (modelo nulo) e depois controlando os fatores de P1, para perceber quanto do "efeito realizador" vai além de ele fazer certos géneros ou filmes mais longos.
+
+```{r}
+#| label: p4
+dados_p4 <- filmes |> filter(!is.na(realizador_id), realizador_n_filmes >= 3)
+
+m_p4_nulo <- lmer(nota ~ 1 + (1 | realizador_id), data = dados_p4)
+f_p4 <- as.formula(paste("nota ~", paste(termos_genero, collapse = " + "),
+                         "+ ns(duracao, 4) + decada_f + ns(log_votos, 4) + (1 | realizador_id)"))
+m_p4 <- lmer(f_p4, data = dados_p4)
+
+icc <- function(m) {
+  vc <- as.data.frame(VarCorr(m))
+  vc$vcov[vc$grp == "realizador_id"] / sum(vc$vcov)
+}
+# R² só com efeitos fixos no mesmo subconjunto, para comparação
+r2_fixos <- summary(lm(formula_p1, data = dados_p4))$r.squared
+
+p4 <- tibble(
+  n_filmes = nrow(dados_p4),
+  n_realizadores = n_distinct(dados_p4$realizador_id),
+  icc_nulo = icc(m_p4_nulo),
+  icc_controlado = icc(m_p4),
+  r2_so_fixos = r2_fixos,
+  aic_fixos = AIC(lm(formula_p1, data = dados_p4)),
+  aic_misto = AIC(update(m_p4, REML = FALSE))
+)
+resultados$p4 <- p4
+kable(p4, digits = 3, format.args = list(big.mark = " "))
+```
+
+```{r}
+#| label: p4-realizadores
+efeitos_real <- ranef(m_p4, condVar = TRUE)$realizador_id
+ef <- tibble(realizador_id = rownames(efeitos_real), efeito = efeitos_real[[1]],
+             ep = sqrt(attr(efeitos_real, "postVar")[1, 1, ])) |>
+  left_join(dados_p4 |> group_by(realizador_id, realizador, realizador_n_filmes) |>
+              summarise(votos_mediana = median(votos), .groups = "drop"),
+            by = "realizador_id")
+
+top_real <- ef |> filter(realizador_n_filmes >= 8) |> slice_max(efeito, n = 10)
+resultados$p4_top <- top_real
+kable(top_real |> select(realizador, realizador_n_filmes, votos_mediana, efeito), digits = 2,
+      col.names = c("Realizador", "Filmes", "Votos (mediana)", "Efeito estimado (pontos)"),
+      caption = "Realizadores com maior efeito positivo (≥ 8 filmes)")
+```
+
+O topo absoluto é dominado por realizadores de nicho, com poucas centenas ou milhares de votos por filme e notas consistentemente muito altas. Isto pode refletir comunidades pequenas e muito leais (ou até votação organizada), o que é uma limitação dos dados: **o IMDb mede o entusiasmo de quem vota, não uma qualidade objetiva.** Restringindo a realizadores amplamente vistos (mediana ≥ 20 mil votos por filme):
+
+```{r}
+#| label: p4-conhecidos
+top_conhecidos <- ef |> filter(realizador_n_filmes >= 8, votos_mediana >= 20000) |>
+  slice_max(efeito, n = 10)
+resultados$p4_top_conhecidos <- top_conhecidos
+kable(top_conhecidos |> select(realizador, realizador_n_filmes, votos_mediana, efeito), digits = 2,
+      format.args = list(big.mark = " "),
+      col.names = c("Realizador", "Filmes", "Votos (mediana)", "Efeito estimado (pontos)"),
+      caption = "Realizadores amplamente vistos com maior efeito positivo")
+
+g_p4 <- ggplot(ef, aes(efeito)) +
+  geom_histogram(binwidth = 0.1, fill = cor_principal, colour = "#fcfcfb", linewidth = 0.1) +
+  geom_vline(xintercept = 0, colour = cor_destaque, linetype = "dashed") +
+  labs(title = "Os realizadores diferem bastante entre si",
+       subtitle = sprintf("Efeito aleatório estimado de %s realizadores (após controlar género, duração, década e votos)",
+                          format(nrow(ef), big.mark = " ")),
+       x = "Desvio da nota face ao esperado (pontos)", y = "Realizadores", caption = fonte_imdb)
+guardar_fig(g_p4, "03_p4_realizadores", altura = 4)
+```
+
+## P5 — É possível prever se um filme terá nota ≥ 7?
+
+Uma nota ≥ 7 é um limiar prático ("vale a pena ver"). Comparamos:
+
+* **Regressão logística:** modelo interpretável, com as mesmas variáveis e *splines* de P1;
+* ***Random forest*** (`ranger`, 300 árvores): capta interações e não linearidades automaticamente.
+
+O realizador **não** entra como preditor, porque usar a média do realizador calculada com o próprio filme seria fuga de informação (*data leakage*). Divisão aleatória treino/teste de 80/20, com semente fixa.
+
+```{r}
+#| label: p5-dados
+set.seed(2026)
+dados_p5 <- filmes |>
+  mutate(bom = factor(if_else(nota >= 7, "sim", "nao"), levels = c("nao", "sim"))) |>
+  select(bom, duracao, ano, log_votos, n_generos, all_of(cols_genero))
+idx <- sample(nrow(dados_p5), size = 0.8 * nrow(dados_p5))
+treino <- dados_p5[idx, ]
+teste  <- dados_p5[-idx, ]
+prop_bom <- mean(dados_p5$bom == "sim")
+prop_bom
+```
+
+```{r}
+#| label: p5-modelos
+f_p5 <- as.formula(paste("bom ~", paste(termos_genero, collapse = " + "),
+                         "+ ns(duracao, 4) + ns(ano, 4) + ns(log_votos, 4) + n_generos"))
+m_log <- glm(f_p5, data = treino, family = binomial)
+p_log <- predict(m_log, teste, type = "response")
+
+treino_rf <- treino |> rename_with(~ make.names(.x))
+teste_rf  <- teste  |> rename_with(~ make.names(.x))
+m_rf <- ranger(bom ~ ., data = treino_rf, num.trees = 300, probability = TRUE,
+               importance = "impurity", seed = 2026, num.threads = 4)
+p_rf <- predict(m_rf, teste_rf)$predictions[, "sim"]
+
+avaliar <- function(prob, nome) {
+  roc_obj <- roc(teste$bom, prob, levels = c("nao", "sim"), direction = "<", quiet = TRUE)
+  previsto <- if_else(prob >= 0.5, "sim", "nao")
+  tibble(modelo = nome, auc = as.numeric(auc(roc_obj)),
+         accuracy = mean(previsto == teste$bom),
+         sensibilidade = mean(previsto[teste$bom == "sim"] == "sim"),
+         especificidade = mean(previsto[teste$bom == "nao"] == "nao"))
+}
+metricas <- bind_rows(
+  tibble(modelo = "Referência (prever sempre \"não\")", auc = 0.5,
+         accuracy = mean(teste$bom == "nao"), sensibilidade = 0, especificidade = 1),
+  avaliar(p_log, "Regressão logística"),
+  avaliar(p_rf, "Random forest")
+)
+resultados$p5_metricas <- metricas
+resultados$p5_prop_bom <- prop_bom
+kable(metricas, digits = 3)
+```
+
+```{r}
+#| label: p5-roc
+curvas_roc <- bind_rows(
+  { r <- roc(teste$bom, p_log, levels = c("nao", "sim"), direction = "<", quiet = TRUE)
+    tibble(fpr = 1 - r$specificities, tpr = r$sensitivities, modelo = "Regressão logística") },
+  { r <- roc(teste$bom, p_rf, levels = c("nao", "sim"), direction = "<", quiet = TRUE)
+    tibble(fpr = 1 - r$specificities, tpr = r$sensitivities, modelo = "Random forest") }
+) |> left_join(metricas |> select(modelo, auc), by = "modelo") |>
+  mutate(modelo = sprintf("%s (AUC = %.3f)", modelo, auc))
+
+g_roc <- ggplot(curvas_roc, aes(fpr, tpr, colour = modelo)) +
+  geom_abline(linetype = "dashed", colour = "#c3c2b7") +
+  geom_path(linewidth = 1) +
+  scale_colour_manual(values = unname(cores[c("azul", "laranja")])) +
+  coord_equal() +
+  guides(colour = guide_legend(ncol = 1)) +
+  labs(title = "Curvas ROC no conjunto de teste",
+       x = "Taxa de falsos positivos", y = "Taxa de verdadeiros positivos", colour = NULL)
+
+importancia_rf <- tibble(variavel = names(m_rf$variable.importance),
+                         importancia = m_rf$variable.importance) |>
+  mutate(variavel = gsub("^g_", "Género: ", variavel),
+         variavel = recode(variavel, log_votos = "log10(votos)", duracao = "Duração",
+                           ano = "Ano", n_generos = "Nº de géneros", `Género: Sci.Fi` = "Género: Sci-Fi"),
+         importancia = importancia / sum(importancia)) |>
+  slice_max(importancia, n = 10)
+resultados$p5_importancia <- importancia_rf
+
+g_imp <- ggplot(importancia_rf, aes(importancia, reorder(variavel, importancia))) +
+  geom_col(fill = cor_principal, width = 0.7) +
+  scale_x_continuous(labels = scales::percent) +
+  labs(title = "Importância das variáveis (random forest)",
+       x = "Importância relativa (redução de impureza)", y = NULL)
+
+g_p5 <- (g_roc | g_imp) + plot_annotation(caption = fonte_imdb)
+guardar_fig(g_p5, "03_p5_roc_importancia", largura = 11, altura = 5)
+```
+
+```{r}
+#| label: guardar
+saveRDS(resultados, "resultados/modelos.rds")
+```
