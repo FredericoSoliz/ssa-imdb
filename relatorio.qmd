@@ -82,7 +82,7 @@ Os dados vêm dos [IMDb Non-Commercial Datasets](https://developer.imdb.com/non-
 | Ficheiro | Linhas (aprox.) | Uso |
 |---|---|---|
 | `title.basics` | 12,9 M | tipo, ano, duração, géneros |
-| `title.ratings` | 1,6 M | nota média, número de votos |
+| `title.ratings` | 1,7 M | nota média, número de votos |
 | `title.crew` | 12,9 M | realizadores |
 | `name.basics` | 15 M | nomes dos realizadores |
 

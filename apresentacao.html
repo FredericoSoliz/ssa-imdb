@@ -520,6 +520,10 @@ padding: 0 0.35em; margin-right: 0.35em; font-size: 0.9em;
 }
 .reveal .conclusoes .titulo { font-weight: 700; color: #eb6834; margin-right: 0.2em; }
 .reveal .destaque-final { font-size: 0.72em; margin-top: 0.6em; padding: 0.5em 0.8em; }
+.reveal .texto-denso { font-size: 0.8em; line-height: 1.38; }
+.reveal .texto-denso ul { margin-top: 0.2em; }
+.reveal .texto-denso li { margin-bottom: 0.45em; }
+.reveal .texto-denso .destaque { font-size: 1em; margin-top: 0; margin-bottom: 0.6em; }
 </style>
   <style type="text/css">.reveal
 div.sourceCode
@@ -1031,21 +1035,28 @@ Frederico Soliz · 2022125511@ufp.edu.pt
 </div>
 </div>
 
-  <p class="date">26 de outubro de 2026</p>
+  <p class="date">27 de outubro de 2026</p>
 </section>
-<section id="a-pergunta-de-partida" class="slide level2">
-<h2>A pergunta de partida</h2>
-<div class="columns">
-<div class="column" style="width:55%;">
+<section id="porquê-este-tema-e-o-que-quero-saber" class="slide level2">
+<h2>Porquê este tema e o que quero saber</h2>
+<div class="columns texto-denso">
+<div class="column" style="width:47%;">
+<p><strong>Porquê este tema</strong></p>
 <ul>
-<li>O IMDb é a minha referência para escolher o que ver.</li>
-<li>Mas um <strong>8 num filme de terror</strong> vale o mesmo que um <strong>8 num drama</strong>?</li>
-<li>E os clássicos são mesmo melhores, ou só os bons sobrevivem na memória?</li>
+<li><strong>Uso pessoal.</strong> Vejo cinema com regularidade e, antes de escolher um filme, consulto quase sempre a nota do IMDb. Muitas vezes, depois de o ver, a minha avaliação fica longe dessa nota. Quis perceber o que é que ela realmente mede.</li>
+<li><strong>Impacto real.</strong> A nota não é só uma curiosidade: ordena rankings como o <em>Top 250</em> e é usada para destacar e recomendar filmes. Se tiver enviesamentos sistemáticos, eles passam para as escolhas de quem a usa.</li>
+<li><strong>Um bom caso de ciência de dados.</strong> Os dados são públicos, grandes (1,7 milhões de títulos com nota) e têm problemas reais de qualidade. Permitem-me percorrer o ciclo completo, da limpeza à modelação.</li>
 </ul>
-</div><div class="column" style="width:45%;">
+</div><div class="column" style="width:53%;">
 <div class="destaque">
-<p>A nota de um filme reflete a sua <strong>qualidade</strong>, ou depende do <strong>género</strong>, da <strong>duração</strong>, da <strong>época</strong> e da <strong>popularidade</strong>?</p>
+<p><strong>Pergunta de partida:</strong> a nota média de um filme no IMDb mede a sua qualidade, ou é influenciada de forma sistemática pelo <strong>género</strong>, pela <strong>duração</strong>, pela <strong>época de estreia</strong>, pela <strong>popularidade</strong> e por <strong>quem o realizou</strong>?</p>
 </div>
+<p><strong>O que me levou a desconfiar</strong></p>
+<ul>
+<li><strong>Géneros:</strong> um 7 significa o mesmo num género com média 4,7 (terror) e noutro com média 7,0 (documentário)?</li>
+<li><strong>Época:</strong> a nota média cai de 6,5 nos anos 20 para 5,8 nos anos 2020. O cinema piorou, ou só os bons filmes antigos continuam a ser vistos e votados?</li>
+<li><strong>Popularidade:</strong> os filmes mais votados têm notas mais altas. A popularidade é consequência da qualidade, ou muda quem vota e como vota?</li>
+</ul>
 </div></div>
 </section>
 <section id="os-dados-imdb-non-commercial-datasets" class="slide level2">
