@@ -36,20 +36,20 @@ dec   <- readRDS("resultados/por_decada.rds")
 ::: {.column width="47%"}
 **Porquê este tema**
 
-* **Uso pessoal.** Vejo cinema com regularidade e, antes de escolher um filme, consulto quase sempre a nota do IMDb. Muitas vezes, depois de o ver, a minha avaliação fica longe dessa nota. Quis perceber o que é que ela realmente mede.
-* **Impacto real.** A nota não é só uma curiosidade: ordena rankings como o *Top 250* e é usada para destacar e recomendar filmes. Se tiver enviesamentos sistemáticos, eles passam para as escolhas de quem a usa.
-* **Um bom caso de ciência de dados.** Os dados são públicos, grandes (1,7 milhões de títulos com nota) e têm problemas reais de qualidade. Permitem-me percorrer o ciclo completo, da limpeza à modelação.
+* **Uso pessoal.** Escolho filmes pela nota do IMDb, mas depois de os ver a minha opinião fica muitas vezes longe dela. O que é que a nota mede?
+* **Impacto real.** A nota ordena rankings (*Top 250*) e recomendações. Os enviesamentos passam para quem a usa.
+* **Ciência de dados.** Dados públicos, grandes (1,7 M títulos com nota) e sujos: o ciclo completo, da limpeza à modelação.
 :::
 ::: {.column width="53%"}
 ::: {.destaque}
-**Pergunta de partida:** a nota média de um filme no IMDb mede a sua qualidade, ou é influenciada de forma sistemática pelo **género**, pela **duração**, pela **época de estreia**, pela **popularidade** e por **quem o realizou**?
+**Pergunta de partida:** a nota do IMDb mede a qualidade, ou depende do **género**, da **duração**, da **época**, da **popularidade** e do **realizador**?
 :::
 
 **O que me levou a desconfiar**
 
-* **Géneros:** um 7 significa o mesmo num género com média `r num(gen$media[gen$genero == "Horror"], 1)` (terror) e noutro com média `r num(gen$media[gen$genero == "Documentary"], 1)` (documentário)?
-* **Época:** a nota média cai de `r num(dec$media[1], 1)` nos anos 20 para `r num(tail(dec$media, 1), 1)` nos anos 2020. O cinema piorou, ou só os bons filmes antigos continuam a ser vistos e votados?
-* **Popularidade:** os filmes mais votados têm notas mais altas. A popularidade é consequência da qualidade, ou muda quem vota e como vota?
+* **Géneros:** um 7 vale o mesmo no terror (média `r num(gen$media[gen$genero == "Horror"], 1)`) e no documentário (média `r num(gen$media[gen$genero == "Documentary"], 1)`)?
+* **Época:** a média cai de `r num(dec$media[1], 1)` (anos 20) para `r num(tail(dec$media, 1), 1)` (anos 2020). O cinema piorou, ou só os bons clássicos são lembrados?
+* **Popularidade:** os mais votados têm melhor nota. Qualidade ou tipo de público?
 :::
 :::
 
